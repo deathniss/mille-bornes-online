@@ -41,7 +41,9 @@ function createDeck() {
   for (let i = 0; i < 3; i++) d.push({ t: 'haz', s: 'flat_tire' });
   for (let i = 0; i < 3; i++) d.push({ t: 'haz', s: 'out_of_gas' });
   for (let i = 0; i < 4; i++) d.push({ t: 'haz', s: 'speed_limit' });
+  for (let i = 0; i < 5; i++) d.push({ t: 'haz', s: 'stop' });
   for (let i = 0; i < 6; i++) d.push({ t: 'rem', s: 'repair' });
+  for (let i = 0; i < 6; i++) d.push({ t: 'rem', s: 'go' });
   for (let i = 0; i < 6; i++) d.push({ t: 'rem', s: 'spare_tire' });
   for (let i = 0; i < 6; i++) d.push({ t: 'rem', s: 'gasoline' });
   for (let i = 0; i < 6; i++) d.push({ t: 'rem', s: 'end_speed' });
@@ -55,8 +57,8 @@ function createDeck() {
 function cardName(c) {
   const names = {
     dist: c.v + ' km',
-    haz: { accident: 'Accident', flat_tire: 'Crevaison', out_of_gas: "Panne d'essence", speed_limit: 'Limitation' }[c.s],
-    rem: { repair: 'Réparation', spare_tire: 'Roue de secours', gasoline: 'Essence', end_speed: 'Fin limitation' }[c.s],
+    haz: { accident: 'Accident', flat_tire: 'Crevaison', out_of_gas: "Panne d'essence", speed_limit: 'Limitation', stop: 'Feu Rouge' }[c.s],
+    rem: { repair: 'Réparation', spare_tire: 'Roue de secours', gasoline: 'Essence', end_speed: 'Fin limitation', go: 'Feu Vert' }[c.s],
     safe: { driving_ace: 'As du volant', puncture_proof: 'Increvable', fuel_tank: 'Réservoir', emergency_vehicle: 'Véhicule prioritaire' }[c.s]
   };
   return names[c.t] || '?';
@@ -65,8 +67,8 @@ function cardName(c) {
 function cardIcon(c) {
   const icons = {
     dist: { 25: '🛣️', 50: '🛣️', 75: '🛣️', 100: '🛣️', 200: '🛣️' }[c.v],
-    haz: { accident: '💥', flat_tire: '🔧', out_of_gas: '⛽', speed_limit: '🚦' }[c.s],
-    rem: { repair: '🔩', spare_tire: '🛞', gasoline: '⛽', end_speed: '✅' }[c.s],
+    haz: { accident: '💥', flat_tire: '🔧', out_of_gas: '⛽', speed_limit: '🚦', stop: '🔴' }[c.s],
+    rem: { repair: '🔩', spare_tire: '🛞', gasoline: '⛽', end_speed: '✅', go: '🟢' }[c.s],
     safe: { driving_ace: '🏆', puncture_proof: '🛡️', fuel_tank: '🛢️', emergency_vehicle: '🚨' }[c.s]
   };
   return icons[c.t] || '🃏';
@@ -78,7 +80,7 @@ function createGame(room) {
   for (const pl of p) {
     pl.hand = [];
     pl.distance = 0;
-    pl.battlePile = null;
+    pl.battlePile = 'stop';
     pl.speedPile = null;
     pl.safeties = [];
     pl.hasDrawn = false;
@@ -102,7 +104,8 @@ function hazardMatch(hazard, safety) {
     (hazard === 'accident' && safety === 'driving_ace') ||
     (hazard === 'flat_tire' && safety === 'puncture_proof') ||
     (hazard === 'out_of_gas' && safety === 'fuel_tank') ||
-    (hazard === 'speed_limit' && safety === 'emergency_vehicle')
+    (hazard === 'speed_limit' && safety === 'emergency_vehicle') ||
+    (hazard === 'stop' && safety === 'emergency_vehicle')
   );
 }
 
@@ -111,7 +114,8 @@ function remedyFor(hazard) {
     accident: 'repair',
     flat_tire: 'spare_tire',
     out_of_gas: 'gasoline',
-    speed_limit: 'end_speed'
+    speed_limit: 'end_speed',
+    stop: 'go'
   }[hazard];
 }
 
@@ -131,7 +135,7 @@ function canPlayCard(player, card, room, target) {
     return null;
   }
   if (card.t === 'rem') {
-    const expectedHazard = card.s === 'end_speed' ? 'speed_limit' : card.s;
+    const expectedHazard = card.s === 'end_speed' ? 'speed_limit' : card.s === 'go' ? 'stop' : card.s;
     if (expectedHazard === 'speed_limit') {
       if (!player.speedPile) return 'Pas de limitation active';
     } else {
@@ -181,7 +185,7 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
     room.lastMove = { player: player.name, action: `${cardName(card)}` };
   } else if (card.t === 'safe') {
     player.safeties.push(card.s);
-    if (card.s === 'emergency_vehicle') player.speedPile = null;
+    if (card.s === 'emergency_vehicle') { player.speedPile = null; if (player.battlePile === 'stop') player.battlePile = null; }
     else if (hazardMatch(card.s === 'driving_ace' ? 'accident' : card.s === 'puncture_proof' ? 'flat_tire' : 'out_of_gas', card.s)) {
       const hazardMap = { driving_ace: 'accident', puncture_proof: 'flat_tire', fuel_tank: 'out_of_gas' };
       if (player.battlePile === hazardMap[card.s]) player.battlePile = null;
