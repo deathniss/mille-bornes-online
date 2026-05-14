@@ -80,7 +80,7 @@ function createGame(room) {
   for (const pl of p) {
     pl.hand = [];
     pl.distance = 0;
-    pl.battlePile = 'stop';
+    pl.battlePile = null;
     pl.speedPile = null;
     pl.safeties = [];
     pl.hasDrawn = false;
