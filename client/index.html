@@ -313,16 +313,14 @@ function selectCard(i){
   if(!gs)return;
   const me=gs.players.find(p=>p.id===pId);
   if(!me||!me.hand||!me.hand[i]||gs.players[gs.currentPlayer]?.id!==pId)return;
-  const card=me.hand[i];
   if(selCard===i){selCard=null;selTarget=null;targetMode=false;renderHand(me);updateBtns(me);return;}
   selCard=i;selTarget=null;targetMode=false;
-  if(card.t==='haz'){targetMode=true;targetSelect(card);}
-  else{renderHand(me);updateBtns(me);}
+  renderHand(me);updateBtns(me);
 }
 
-function targetSelect(card){
+function targetSelect(card, onPick){
   const ot=gs.players.filter(p=>p.id!==pId);
-  let h='<div class="target-overlay"><h3>🎯 Cible</h3>';
+  let h='<div class="target-overlay"><h3>🎯 Choisis une cible</h3>';
   ot.forEach(p=>{
     let dis=false,w='';
     if(p.isConnected===false){dis=true;w='Déco'}
@@ -336,9 +334,10 @@ function targetSelect(card){
   d.querySelectorAll('.target-opp:not(.disabled)').forEach(el=>{el.addEventListener('click',()=>{
     selTarget=el.dataset.id;targetMode=false;document.body.removeChild(d);
     renderHand(gs.players.find(p=>p.id===pId));updateBtns();
+    if(onPick)onPick();
   })});
   d.querySelector('.target-cancel').addEventListener('click',()=>{
-    selCard=null;targetMode=false;document.body.removeChild(d);
+    selCard=null;selTarget=null;targetMode=false;document.body.removeChild(d);
     renderHand(gs.players.find(p=>p.id===pId));updateBtns();
   });
 }
@@ -346,7 +345,7 @@ function targetSelect(card){
 function updateBtns(me){
   const pb=document.getElementById('playb'),db=document.getElementById('discb'),eb=document.getElementById('endb');
   const myTurn=gs&&gs.players[gs.currentPlayer]?.id===pId;
-  pb.disabled=selCard===null||!myTurn||targetMode;
+  pb.disabled=selCard===null||!myTurn;
   db.disabled=selCard===null||!myTurn;
   eb.disabled=!myTurn;
 }
@@ -406,6 +405,15 @@ document.getElementById('playb').addEventListener('click',()=>{
   const me=gs&&gs.players.find(p=>p.id===pId);
   if(!me||!me.hand[selCard])return;
   const card=me.hand[selCard];
+  if(card.t==='haz' && !selTarget){
+    targetMode=true;
+    targetSelect(card, ()=>{
+      const msg={type:'play_card',cardIndex:selCard,targetId:selTarget};
+      ws.send(JSON.stringify(msg));
+      selCard=null;selTarget=null;targetMode=false;
+    });
+    return;
+  }
   const msg={type:'play_card',cardIndex:selCard};
   if(card.t==='haz'&&selTarget)msg.targetId=selTarget;
   ws.send(JSON.stringify(msg));
