@@ -328,7 +328,6 @@ function showCardMenu(idx){
     <div class="ab">
       <button class="play" id="cplay"${canPlay?'':' disabled'}>▶ Jouer${canPlay?'':' (bloqué)'}</button>
       <button class="disc" id="cdisc">🗑 Jeter</button>
-      <button class="pass" id="cpass">⏭ Passer le tour</button>
       <button class="cancel" id="ccancel">✕ Annuler</button>
     </div>
   </div>`;
@@ -346,10 +345,6 @@ function showCardMenu(idx){
   });
   d.querySelector('#cdisc').addEventListener('click',()=>{
     ws.send(JSON.stringify({type:'discard_card',cardIndex:idx}));
-    document.body.removeChild(d);
-  });
-  d.querySelector('#cpass').addEventListener('click',()=>{
-    ws.send(JSON.stringify({type:'end_turn'}));
     document.body.removeChild(d);
   });
   d.querySelector('#ccancel').addEventListener('click',()=>document.body.removeChild(d));

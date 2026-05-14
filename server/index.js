@@ -403,6 +403,7 @@ wss.on('connection', (ws) => {
       const card = player.hand.splice(cardIndex, 1)[0];
       room.discard.push(card);
       room.lastMove = { player: player.name, action: `défausse ${cardName(card)}` };
+      advanceTurn(room);
       for (const p of room.players) {
         if (p.ws && p.ws.readyState === 1) {
           p.ws.send(JSON.stringify({ type: 'game_update', state: playerState(room, p.id), yourTurn: room.players[room.currentPlayer].id === p.id }));
