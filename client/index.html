@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Mille Bornes Online</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;overflow-x:hidden;overflow-y:hidden}
+button{cursor:pointer;border:none;font-family:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:10px 20px;transition:all .2s}
+button:active{transform:scale(0.97)}
+input{font-family:inherit;font-size:16px;padding:10px 14px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;outline:none;width:100%}
+input:focus{border-color:#4A90D9}
+.screen{display:none;flex-direction:column;align-items:center;min-height:100vh;padding:20px;width:100%}
+.screen.active{display:flex}
+h1{font-size:28px;margin-bottom:5px;text-align:center}
+.btn-primary{background:#4A90D9;color:#fff}
+.btn-primary:disabled{background:#555;cursor:not-allowed}
+.btn-success{background:#2ECC71;color:#fff}
+.btn-gold{background:#F39C12;color:#fff}
+.btn-outline{background:transparent;border:2px solid #4A90D9;color:#4A90D9}
+.btn-small{padding:6px 12px;font-size:12px}
+.lobby-card{background:#16213e;border-radius:16px;padding:30px;width:100%;max-width:420px;text-align:center}
+.lobby-card .logo{font-size:48px;margin-bottom:10px}
+.lobby-card .subtitle{color:#888;margin-bottom:20px;font-size:14px}
+.lobby-card .or{color:#555;margin:15px 0;font-size:13px}
+.room-code{font-size:40px;font-weight:800;letter-spacing:8px;background:#0f3460;padding:15px;border-radius:12px;margin:10px 0;font-family:monospace;color:#4A90D9}
+.room-code-hint{color:#888;font-size:12px;cursor:pointer;display:block}
+.player-list{width:100%;max-width:420px;margin-bottom:15px}
+.player-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0f3460;border-radius:10px;margin-bottom:5px}
+.player-item .av{width:32px;height:32px;border-radius:50%;background:#4A90D9;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+.player-item .nm{flex:1;font-weight:500}
+.player-item .hb{font-size:10px;background:#F39C12;color:#000;padding:2px 7px;border-radius:4px;font-weight:600}
+.waiting-info{color:#888;font-size:13px;text-align:center;margin:8px 0}
+.waiting-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.game-container{width:100%;max-width:520px;display:flex;flex-direction:column;height:100vh}
+.game-top{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f3460;font-size:12px;flex-shrink:0}
+.game-top .turn{color:#2ECC71;font-weight:600}
+.game-top .turn.wait{color:#F39C12}
+.opp-row{display:flex;gap:5px;padding:5px 8px;overflow-x:auto;flex-shrink:0;min-height:70px}
+.opp{flex-shrink:0;background:#16213e;border-radius:8px;padding:5px 8px;min-width:80px;text-align:center}
+.opp.cur{border:2px solid #F39C12}
+.opp .on{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px}
+.opp .od{font-size:15px;font-weight:800;color:#4A90D9}
+.opp .odl{font-size:9px;color:#888}
+.opp .os{display:flex;gap:2px;justify-content:center;margin-top:2px;flex-wrap:wrap}
+.opp .os .t{font-size:9px;padding:1px 4px;border-radius:3px;background:#333}
+.opp .os .th{background:#D94A4A;color:#fff}
+.opp .os .ts{background:#F39C12;color:#000}
+.opp .oc{font-size:9px;color:#888;margin-top:1px}
+.board{flex:1;display:flex;flex-direction:column;padding:6px 10px;overflow:hidden}
+.pinfo{background:#16213e;border-radius:12px;padding:10px 14px;flex-shrink:0}
+.pit{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.pinm{font-weight:700;font-size:15px}
+.pid{font-size:22px;font-weight:800;color:#4A90D9}
+.pid span{font-size:13px;color:#888;font-weight:400}
+.pis{display:flex;gap:4px;flex-wrap:wrap}
+.pis .tag{font-size:10px;padding:2px 7px;border-radius:4px;background:#333}
+.pis .th{background:#D94A4A;color:#fff}
+.pis .ts{background:#F39C12;color:#000}
+.pis .tsp{background:#E67E22;color:#fff}
+.lmove{text-align:center;padding:4px;color:#888;font-size:12px;min-height:22px;font-style:italic;flex-shrink:0}
+.handarea{background:#0f3460;border-radius:12px 12px 0 0;padding:5px 4px;flex-shrink:0}
+.hand{display:flex;gap:5px;overflow-x:auto;padding:4px;min-height:72px;align-items:center}
+.handempty{text-align:center;padding:12px;color:#555;font-size:12px;width:100%}
+.card{flex-shrink:0;width:62px;height:84px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s;border:2px solid transparent;padding:3px;user-select:none}
+.card:active{transform:scale(0.95)}
+.card.sel{border-color:#fff;box-shadow:0 0 10px rgba(255,255,255,0.3);transform:translateY(-5px)}
+.card .ci{font-size:18px;margin-bottom:1px}
+.card .cn{text-align:center;line-height:1.2;font-size:9px;word-break:break-word}
+.card .cv{font-size:14px;font-weight:800}
+.card.dist{background:linear-gradient(135deg,#1a3a6e,#2a5ab8);border-color:#4A90D9}
+.card.haz{background:linear-gradient(135deg,#6e1a1a,#b82a2a);border-color:#D94A4A}
+.card.rem{background:linear-gradient(135deg,#1a6e1a,#2ab82a);border-color:#2ECC71}
+.card.safe{background:linear-gradient(135deg,#6e5a1a,#b89a2a);border-color:#F39C12}
+.ga{display:flex;gap:6px;padding:5px 10px 10px;background:#0f3460;flex-shrink:0}
+.ga button{flex:1;font-size:12px;padding:8px}
+.drawb{background:#4A90D9;color:#fff}
+.playb{background:#2ECC71;color:#fff}
+.playb:disabled{background:#333;color:#666;cursor:not-allowed}
+.endb{background:#D94A4A;color:#fff}
+.target-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.target-overlay h3{margin-bottom:15px;color:#F39C12}
+.target-opp{background:#16213e;padding:12px 20px;border-radius:10px;margin:4px;font-size:15px;font-weight:600;min-width:140px;text-align:center}
+.target-opp:hover{background:#0f3460}
+.target-opp.disabled{opacity:0.4;cursor:not-allowed}
+.target-cancel{background:#555;margin-top:12px;padding:8px 20px;border-radius:6px;font-size:13px;color:#fff}
+.results-screen{text-align:center}
+.wname{font-size:24px;color:#F39C12;margin-bottom:20px}
+.fscores{width:100%;max-width:420px;margin-bottom:20px}
+.fscores .r{display:flex;justify-content:space-between;padding:10px 16px;background:#16213e;border-radius:8px;margin-bottom:5px}
+.fscores .r:first-child{background:#0f3460;border:1px solid #F39C12}
+.fscores .r .pos{color:#888;font-weight:600;min-width:20px}
+.fscores .r:first-child .pos{color:#F39C12}
+.err{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#D94A4A;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:200;display:none;max-width:90%;text-align:center}
+
+@media(min-width:600px){
+  .card{width:70px;height:92px}.card .ci{font-size:22px}.card .cn{font-size:10px}.card .cv{font-size:16px}
+  .opp{min-width:90px}
+}
+@media(max-width:380px){
+  .card{width:54px;height:74px}.card .ci{font-size:15px}.card .cn{font-size:8px}.card .cv{font-size:12px}
+  .room-code{font-size:28px;letter-spacing:5px}
+}
+</style>
+</head>
+<body>
+
+<div id="err" class="err"></div>
+
+<div id="lobby" class="screen active">
+  <div class="lobby-card">
+    <div class="logo">🚗</div>
+    <h1>Mille Bornes Online</h1>
+    <p class="subtitle">2 à 8 joueurs • Jeu de cartes multijoueur</p>
+    <input id="name" placeholder="Ton pseudo" maxlength="16" style="margin-bottom:12px">
+    <button class="btn-primary" id="create-btn" style="width:100%;padding:14px">🏁 Créer une partie</button>
+    <div class="or">— ou —</div>
+    <input id="jcode" placeholder="Code de la partie" maxlength="4" style="text-transform:uppercase;text-align:center;font-weight:700;letter-spacing:4px;margin-bottom:8px">
+    <button class="btn-success" id="join-btn" style="width:100%;padding:14px">🚀 Rejoindre</button>
+  </div>
+</div>
+
+<div id="waiting" class="screen">
+  <h1>🚗 Partie créée</h1>
+  <p style="color:#888;font-size:14px">Partage ce code :</p>
+  <div class="room-code" id="rcode">----</div>
+  <span class="room-code-hint" id="copyhint">📋 Copier</span>
+  <div class="player-list" id="wlist"></div>
+  <p class="waiting-info" id="winfo">En attente...</p>
+  <div class="waiting-actions">
+    <button class="btn-primary" id="start-btn" disabled>🏁 Lancer</button>
+    <button class="btn-outline" id="leave-btn">Quitter</button>
+  </div>
+</div>
+
+<div id="game" class="screen">
+  <div class="game-container">
+    <div class="game-top">
+      <span>🚗 Mille Bornes</span>
+      <span class="turn" id="turn">En attente...</span>
+      <span id="status-badge" style="font-size:10px;color:#888"></span>
+    </div>
+    <div class="opp-row" id="opp-row"></div>
+    <div class="board">
+      <div class="pinfo">
+        <div class="pit">
+          <span class="pinm" id="sname">Toi</span>
+          <span class="pid" id="sdist">0 <span>km</span></span>
+        </div>
+        <div class="pis" id="sstatus"></div>
+      </div>
+      <div class="lmove" id="lmove"></div>
+      <div style="flex:1;min-height:0"></div>
+    </div>
+    <div class="handarea">
+      <div class="hand" id="hand"></div>
+    </div>
+    <div class="ga">
+      <button class="drawb" id="drawb">🃏 Piocher</button>
+      <button class="playb" id="playb" disabled>▶ Jouer</button>
+      <button class="endb" id="endb">⏭ Passer</button>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="screen">
+  <div style="text-align:center;padding:40px 20px;width:100%;max-width:500px">
+    <div style="font-size:64px;margin-bottom:10px">🏆</div>
+    <h1>Partie terminée !</h1>
+    <div class="wname" id="wname">Vainqueur</div>
+    <div class="fscores" id="fscores"></div>
+    <button class="btn-primary" id="replay-btn" style="margin-top:10px;padding:14px 40px">🔄 Revenir au salon</button>
+  </div>
+</div>
+
+<script>
+// ===================== CONFIG =====================
+const MAX_PLAYERS = 8;
+const CARD_NAMES = {
+  dist:{25:'25km',50:'50km',75:'75km',100:'100km',200:'200km'},
+  haz:{accident:'Accident',flat_tire:'Crevaison',out_of_gas:'Panne',speed_limit:'Limitation'},
+  rem:{repair:'Réparation',spare_tire:'Roue secours',gasoline:'Essence',end_speed:'Fin limite'},
+  safe:{driving_ace:'As du volant',puncture_proof:'Increvable',fuel_tank:'Réservoir',emergency_vehicle:'Prioritaire'}
+};
+const HI = {accident:'💥',flat_tire:'🔧',out_of_gas:'⛽',speed_limit:'🚦'};
+const SI = {driving_ace:'🏆',puncture_proof:'🛡️',fuel_tank:'🛢️',emergency_vehicle:'🚨'};
+
+let ws=null,pId='',myName='',myRoom='',isHost=false;
+let gs=null,selCard=null,selTarget=null,targetMode=false;
+const S = s=>[lobby,waiting,game,results].forEach(e=>e.classList.toggle('active',e.id===s));
+const E = m=>{errEl.textContent=m;errEl.style.display='block';setTimeout(()=>errEl.style.display='none',3500)};
+const gn = ()=>['Alexis','Camille','Jordan','Morgan','Louise','Hugo','Emma','Lucas','Léa','Nathan','Tom','Jade'][Math.floor(Math.random()*12)]+Math.floor(Math.random()*100);
+const gc = ()=>{let c='';for(let i=0;i<4;i++)c+=String.fromCharCode(65+Math.floor(Math.random()*26));return c};
+const shuffle = a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const dn = c=>{if(c.t==='dist')return c.v+'km';const n=CARD_NAMES[c.t];return n&&n[c.s]?n[c.s]:'?'};
+const ci = c=>{if(c.t==='dist')return'🛣️';if(c.t==='haz')return HI[c.s]||'⚠️';if(c.t==='rem')return{repair:'🔩',spare_tire:'🛞',gasoline:'⛽',end_speed:'✅'}[c.s]||'🔧';return SI[c.s]||'🛡️'};
+const cc = c=>{if(c.t==='dist')return'dist';if(c.t==='haz')return'haz';if(c.t==='rem')return'rem';return'safe'};
+const hm = (s,safe)=>(s==='accident'&&safe==='driving_ace')||(s==='flat_tire'&&safe==='puncture_proof')||(s==='out_of_gas'&&safe==='fuel_tank')||(s==='speed_limit'&&safe==='emergency_vehicle');
+
+const lobby=document.getElementById('lobby'),waiting=document.getElementById('waiting');
+const game=document.getElementById('game'),results=document.getElementById('results');
+const errEl=document.getElementById('err');
+
+// ===================== WEBSOCKET =====================
+function connect(){
+  let url = localStorage.getItem('srvUrl');
+  if (!url) {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    url = proto + '//' + (location.host || 'localhost:3000');
+  } else {
+    url = 'ws://' + url;
+  }
+  ws = new WebSocket(url);
+  ws.onopen = ()=>console.log('connecté');
+  ws.onmessage = e=>{
+    try{
+      const m = JSON.parse(e.data);
+      handle(m);
+    }catch(x){}
+  };
+  ws.onclose = ()=>{
+    if(game.classList.contains('active')||waiting.classList.contains('active')){
+      E('Connexion perdue !');
+      S('lobby');
+    }
+  };
+}
+
+function handle(m){
+  switch(m.type){
+    case 'connected': pId=m.playerId; break;
+    case 'room_created': myRoom=m.roomId; isHost=true; S('waiting'); renderW(m.players); break;
+    case 'room_joined': myRoom=m.roomId; isHost=false; S('waiting'); renderW(m.players); break;
+    case 'player_joined': if(m.players)renderW(m.players); break;
+    case 'game_start': gs=m.state; selCard=null; S('game'); renderG(); break;
+    case 'game_update': gs=m.state; renderG(); break;
+    case 'game_over': gs=m.state; showR(m.winner); break;
+    case 'error': E(m.message); break;
+    case 'player_disconnected': if(gs&&gs.players)gs.players.forEach(p=>{if(p.id===m.playerId)p.isConnected=false}); renderG(); break;
+  }
+}
+
+// ===================== LOBBY =====================
+function renderW(players){
+  const list=document.getElementById('wlist');
+  document.getElementById('rcode').textContent=myRoom;
+  document.getElementById('start-btn').style.display=isHost?'inline':'none';
+  document.getElementById('start-btn').disabled=true;
+  document.getElementById('start-btn').textContent='🏁 En attente...';
+  if(players){
+    list.innerHTML=players.map(p=>`<div class="player-item"><div class="av">${(p.name||'?')[0].toUpperCase()}</div><span class="nm">${p.name}</span>${p.isHost?'<span class="hb">HÔTE</span>':''}</div>`).join('');
+    const c=players.length;
+    document.getElementById('winfo').textContent=c+'/'+MAX_PLAYERS+' joueurs'+(c>=2?' — L\'hôte peut lancer':'');
+    if(isHost&&c>=2){document.getElementById('start-btn').disabled=false;document.getElementById('start-btn').textContent='🏁 Lancer ('+c+' joueurs)';}
+  }
+}
+
+// ===================== GAME UI =====================
+function renderG(){
+  if(!gs||!gs.players)return;
+  const me=gs.players.find(p=>p.id===pId);
+  if(!me)return;
+  const ot=gs.players.filter(p=>p.id!==pId);
+  const ti=document.getElementById('turn');
+  if(gs.phase==='finished'){ti.textContent='🏁 Terminé';ti.className='turn';}
+  else{
+    const cur=gs.players[gs.currentPlayer];
+    if(cur&&cur.id===pId){ti.textContent='🎯 À TON TOUR';ti.className='turn';}
+    else{ti.textContent='⏳ Tour de '+(cur?cur.name:'?');ti.className='turn wait';}
+  }
+  document.getElementById('status-badge').textContent=isHost?'👑 Hôte':'';
+  const row=document.getElementById('opp-row');
+  row.innerHTML=ot.map(p=>{
+    const st=[];
+    if(p.battlePile)st.push(`<span class="t th">${HI[p.battlePile]||'⚠️'}</span>`);
+    if(p.speedPile)st.push(`<span class="t th">🚦</span>`);
+    (p.safeties||[]).forEach(x=>st.push(`<span class="t ts">${SI[x]||'🛡️'}</span>`));
+    if(p.isConnected===false)st.push(`<span style="color:#555">📴</span>`);
+    const cur=gs.players[gs.currentPlayer]&&gs.players[gs.currentPlayer].id===p.id;
+    return `<div class="opp${cur?' cur':''}"><div class="on">${p.name}</div><div class="od">${p.distance||0}<span class="odl">km</span></div><div class="os">${st.join('')||'<span style="color:#444">✓</span>'}</div><div class="oc">${p.handSize||0}</div></div>`;
+  }).join('');
+
+  document.getElementById('sname').textContent=me.name+(isHost?' 👑':'');
+  document.getElementById('sdist').innerHTML=`${me.distance||0} <span>km</span>`;
+  const st=document.getElementById('sstatus');
+  const tags=[];
+  if(me.battlePile)tags.push(`<span class="tag th">${HI[me.battlePile]||'⚠️'} ${me.battlePile.replace('_',' ')}</span>`);
+  if(me.speedPile)tags.push(`<span class="tag tsp">🚦 Limité</span>`);
+  (me.safeties||[]).forEach(s=>tags.push(`<span class="tag ts">${SI[s]||'🛡️'} ${s.replace('_',' ')}</span>`));
+  st.innerHTML=tags.length?tags.join(''):'<span class="tag" style="color:#666">✓ En route</span>';
+  document.getElementById('lmove').textContent=gs.lastMove?`⚡ ${gs.lastMove.player} : ${gs.lastMove.action}`:'';
+  renderHand(me);
+  updateBtns(me);
+}
+
+function renderHand(me){
+  const h=document.getElementById('hand');
+  if(!me||!me.hand||!me.hand.length){h.innerHTML='<div class="handempty">Aucune carte</div>';return;}
+  h.innerHTML=me.hand.map((c,i)=>{
+    const cl=cc(c),sl=selCard===i?' sel':'';
+    return `<div class="card ${cl}${sl}" data-i="${i}"><div class="ci">${ci(c)}</div>${c.t==='dist'?`<div class="cv">${c.v}</div>`:''}<div class="cn">${dn(c)}</div></div>`;
+  }).join('');
+  h.querySelectorAll('.card').forEach(el=>{el.addEventListener('click',()=>selectCard(parseInt(el.dataset.i)))});
+}
+
+function selectCard(i){
+  if(!gs)return;
+  const me=gs.players.find(p=>p.id===pId);
+  if(!me||!me.hand||!me.hand[i]||gs.players[gs.currentPlayer]?.id!==pId||!me.hasDrawn)return;
+  const card=me.hand[i];
+  if(selCard===i){selCard=null;selTarget=null;targetMode=false;renderHand(me);updateBtns(me);return;}
+  selCard=i;selTarget=null;targetMode=false;
+  if(card.t==='haz'){targetMode=true;targetSelect(card);}
+  else{renderHand(me);updateBtns(me);}
+}
+
+function targetSelect(card){
+  const ot=gs.players.filter(p=>p.id!==pId);
+  let h='<div class="target-overlay"><h3>🎯 Cible</h3>';
+  ot.forEach(p=>{
+    let dis=false,w='';
+    if(p.isConnected===false){dis=true;w='Déco'}
+    else if(card.s==='speed_limit'&&p.speedPile){dis=true;w='Déjà limité'}
+    else if(card.s!=='speed_limit'&&p.battlePile){dis=true;w='Bloqué'}
+    else if((p.safeties||[]).some(s=>hm(card.s,s))){dis=true;w='Protégé'}
+    h+=`<div class="target-opp${dis?' disabled':''}" data-id="${p.id}">${p.name} ${w?'— '+w:''}</div>`;
+  });
+  h+=`<button class="target-cancel">Annuler</button></div>`;
+  const d=document.createElement('div');d.innerHTML=h;document.body.appendChild(d);
+  d.querySelectorAll('.target-opp:not(.disabled)').forEach(el=>{el.addEventListener('click',()=>{
+    selTarget=el.dataset.id;targetMode=false;document.body.removeChild(d);
+    renderHand(gs.players.find(p=>p.id===pId));updateBtns();
+  })});
+  d.querySelector('.target-cancel').addEventListener('click',()=>{
+    selCard=null;targetMode=false;document.body.removeChild(d);
+    renderHand(gs.players.find(p=>p.id===pId));updateBtns();
+  });
+}
+
+function updateBtns(me){
+  const db=document.getElementById('drawb'),pb=document.getElementById('playb'),eb=document.getElementById('endb');
+  const myTurn=gs&&gs.players[gs.currentPlayer]?.id===pId;
+  const drawn=me&&me.hasDrawn;
+  db.disabled=!myTurn||drawn;
+  db.textContent=drawn?'✅ Pioché':'🃏 Piocher';
+  pb.disabled=selCard===null||(myTurn&&!drawn)||targetMode;
+  eb.disabled=!myTurn;
+}
+
+function showR(wid){
+  S('results');
+  if(!gs)return;
+  const wp=gs.players.find(p=>p.id===wid);
+  document.getElementById('wname').textContent=wp?wp.name:'?';
+  const sorted=[...gs.players].sort((a,b)=>b.distance-a.distance);
+  document.getElementById('fscores').innerHTML=sorted.map((p,i)=>`<div class="r"><span class="pos">#${i+1}</span><span>${p.name}</span><span>${p.distance||0} km</span></div>`).join('');
+}
+
+// ===================== EVENTS =====================
+document.getElementById('create-btn').addEventListener('click',()=>{
+  myName=document.getElementById('name').value.trim()||'Joueur';
+  if(!ws||ws.readyState!==1){E('Connexion...');return;}
+  ws.send(JSON.stringify({type:'create_room',playerName:myName, maxPlayers: MAX_PLAYERS}));
+});
+
+document.getElementById('join-btn').addEventListener('click',()=>{
+  myName=document.getElementById('name').value.trim()||'Joueur';
+  const code=document.getElementById('jcode').value.trim().toUpperCase();
+  if(!code||code.length<4)return E('Entre un code à 4 lettres');
+  if(!ws||ws.readyState!==1){E('Connexion...');return;}
+  ws.send(JSON.stringify({type:'join_room',roomId:code,playerName:myName}));
+});
+
+document.getElementById('name').value=gn();
+document.getElementById('jcode').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('join-btn').click()});
+document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('create-btn').click()});
+
+document.getElementById('start-btn').addEventListener('click',()=>{
+  if(ws)ws.send(JSON.stringify({type:'start_game'}));
+});
+
+document.getElementById('leave-btn').addEventListener('click',()=>{myRoom='';isHost=false;S('lobby')});
+document.getElementById('copyhint').addEventListener('click',()=>{
+  navigator.clipboard.writeText(document.getElementById('rcode').textContent);
+  document.getElementById('copyhint').textContent='✅ Copié';
+  setTimeout(()=>document.getElementById('copyhint').textContent='📋 Copier',2000);
+});
+
+document.getElementById('drawb').addEventListener('click',()=>{if(ws)ws.send(JSON.stringify({type:'draw_card'}))});
+document.getElementById('endb').addEventListener('click',()=>{
+  if(ws)ws.send(JSON.stringify({type:'end_turn'}));
+  selCard=null;selTarget=null;
+});
+
+document.getElementById('playb').addEventListener('click',()=>{
+  if(selCard===null||!ws)return;
+  const me=gs&&gs.players.find(p=>p.id===pId);
+  if(!me||!me.hand[selCard])return;
+  const card=me.hand[selCard];
+  const msg={type:'play_card',cardIndex:selCard};
+  if(card.t==='haz'&&selTarget)msg.targetId=selTarget;
+  ws.send(JSON.stringify(msg));
+  selCard=null;selTarget=null;
+});
+
+document.getElementById('replay-btn').addEventListener('click',()=>{S('waiting')});
+
+connect();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "appId": "fr.millebornes.online",
+  "appName": "Mille Bornes P2P",
+  "webDir": "client",
+  "server": {
+    "androidScheme": "https"
+  }
+}

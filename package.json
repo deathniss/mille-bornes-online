@@ -1,0 +1,16 @@
+{
+  "name": "mille-bornes-online",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "express": "^4.22.2",
+    "ws": "^8.20.1"
+  }
+}

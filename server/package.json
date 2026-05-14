@@ -1,0 +1,10 @@
+{
+  "name": "mille-bornes-online",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mille Bornes online multiplayer card game",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  }
+}
