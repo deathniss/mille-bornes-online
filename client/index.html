@@ -372,6 +372,7 @@ function showTargetSelect(card, onPick){
     let dis=false,w='';
     if(p.isConnected===false){dis=true;w='Déco'}
     else if(card.s==='speed_limit'&&p.speedPile){dis=true;w='Déjà limité'}
+    else if(card.s!=='speed_limit'&&p.battlePile&&!(p.battlePile==='stop'&&!p.lastAttacked)){dis=true;w='Déjà attaqué'}
     else if((p.safeties||[]).some(s=>hm(card.s,s))){dis=true;w='Protégé'}
     h+=`<div class="target-opp${dis?' disabled':''}" data-id="${p.id}">${p.name} ${w?'— '+w:''}</div>`;
   });

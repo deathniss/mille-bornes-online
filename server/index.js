@@ -130,6 +130,7 @@ function canPlayCard(player, card, room, target) {
     if (player.battlePile) return 'Tu es bloqué, joue d\'abord une défense ou Feu Vert !';
     if (!target || target.id === player.id) return 'Cible invalide';
     if (card.s === 'speed_limit' && target.speedPile) return 'Déjà limité';
+    if (card.s !== 'speed_limit' && target.battlePile && !(target.battlePile === 'stop' && !target.lastAttacked)) return 'Déjà attaqué, attend qu\'il se défende !';
     if (target.safeties.some(s => hazardMatch(card.s, s))) return 'Protégé par une botte';
     return null;
   }
@@ -180,6 +181,7 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
       player.speedPile = null;
     } else {
       player.battlePile = null;
+      player.lastAttacked = null;
     }
     room.lastMove = { player: player.name, action: `${cardName(card)}` };
   } else if (card.t === 'safe') {
