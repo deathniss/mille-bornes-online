@@ -353,6 +353,7 @@ function showCardMenu(idx){
 function canPlayCardCheck(card, player){
   if(card.t==='dist') return !player.battlePile && !(player.speedPile&&card.v>50) && player.distance+card.v<=1000;
   if(card.t==='haz'){
+    if(player.battlePile) return false;
     const targets=gs.players.filter(p=>p.id!==pId);
     return targets.some(p=>p.isConnected!==false && !(card.s==='speed_limit'&&p.speedPile) && !((p.safeties||[]).some(s=>hm(card.s,s))));
   }
