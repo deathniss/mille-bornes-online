@@ -74,12 +74,20 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
 .card.rem{background:linear-gradient(135deg,#1a6e1a,#2ab82a);border-color:#2ECC71}
 .card.safe{background:linear-gradient(135deg,#6e5a1a,#b89a2a);border-color:#F39C12}
 .ga{display:flex;gap:6px;padding:5px 10px 10px;background:#0f3460;flex-shrink:0}
-.ga button{flex:1;font-size:12px;padding:8px}
-.playb{background:#2ECC71;color:#fff}
-.playb:disabled{background:#333;color:#666;cursor:not-allowed}
-.discb{background:#E67E22;color:#fff}
-.discb:disabled{background:#333;color:#666;cursor:not-allowed}
+.ga button{flex:1;font-size:14px;padding:10px}
 .endb{background:#D94A4A;color:#fff}
+.cam{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.cam .c{background:linear-gradient(135deg,#162447,#1a3a6e);border:2px solid #4A90D9;border-radius:12px;padding:16px;text-align:center;min-width:160px}
+.cam .ci{font-size:48px}
+.cam .cn{font-size:16px;margin:8px 0 4px;color:#ddd;font-weight:700}
+.cam .ct{font-size:13px;color:#aaa;margin-bottom:12px;text-transform:capitalize}
+.cam .ab{display:flex;flex-direction:column;gap:8px;width:100%}
+.cam .ab button{font-size:14px;padding:10px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+.cam .ab .play{background:#2ECC71;color:#fff}
+.cam .ab .play:disabled{background:#444;color:#666;cursor:not-allowed}
+.cam .ab .disc{background:#E67E22;color:#fff}
+.cam .ab .pass{background:#D94A4A;color:#fff}
+.cam .ab .cancel{background:#555;color:#ccc}
 .target-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 .target-overlay h3{margin-bottom:15px;color:#F39C12}
 .target-opp{background:#16213e;padding:12px 20px;border-radius:10px;margin:4px;font-size:15px;font-weight:600;min-width:140px;text-align:center}
@@ -158,9 +166,6 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
       <div class="hand" id="hand"></div>
     </div>
     <div class="ga">
-      <button class="drawb" id="drawb" style="display:none">🃏 Piocher</button>
-      <button class="playb" id="playb" disabled>▶ Jouer</button>
-      <button class="discb" id="discb" disabled>🗑 Jeter</button>
       <button class="endb" id="endb">⏭ Passer</button>
     </div>
   </div>
@@ -189,7 +194,7 @@ const HI = {accident:'💥',flat_tire:'🔧',out_of_gas:'⛽',speed_limit:'🚦'
 const SI = {driving_ace:'🏆',puncture_proof:'🛡️',fuel_tank:'🛢️',emergency_vehicle:'🚨'};
 
 let ws=null,pId='',myName='',myRoom='',isHost=false;
-let gs=null,selCard=null,selTarget=null,targetMode=false;
+let gs=null;
 const S = s=>[lobby,waiting,game,results].forEach(e=>e.classList.toggle('active',e.id===s));
 const E = m=>{errEl.textContent=m;errEl.style.display='block';setTimeout(()=>errEl.style.display='none',3500)};
 const gn = ()=>['Alexis','Camille','Jordan','Morgan','Louise','Hugo','Emma','Lucas','Léa','Nathan','Tom','Jade'][Math.floor(Math.random()*12)]+Math.floor(Math.random()*100);
@@ -306,47 +311,86 @@ function renderHand(me){
     const cl=cc(c),sl=selCard===i?' sel':'';
     return `<div class="card ${cl}${sl}" data-i="${i}"><div class="ci">${ci(c)}</div>${c.t==='dist'?`<div class="cv">${c.v}</div>`:''}<div class="cn">${dn(c)}</div></div>`;
   }).join('');
-  h.querySelectorAll('.card').forEach(el=>{el.addEventListener('click',()=>selectCard(parseInt(el.dataset.i)))});
+  h.querySelectorAll('.card').forEach(el=>{el.addEventListener('click',()=>showCardMenu(parseInt(el.dataset.i)))});
 }
 
-function selectCard(i){
+function showCardMenu(idx){
   if(!gs)return;
   const me=gs.players.find(p=>p.id===pId);
-  if(!me||!me.hand||!me.hand[i]||gs.players[gs.currentPlayer]?.id!==pId)return;
-  if(selCard===i){selCard=null;selTarget=null;targetMode=false;renderHand(me);updateBtns(me);return;}
-  selCard=i;selTarget=null;targetMode=false;
-  renderHand(me);updateBtns(me);
+  if(!me||!me.hand||!me.hand[idx]||gs.players[gs.currentPlayer]?.id!==pId)return;
+  const card=me.hand[idx];
+  const canPlay = canPlayCardCheck(card, me);
+  const d=document.createElement('div');d.className='cam';
+  d.innerHTML=`<div class="c">
+    <div class="ci">${ci(card)}</div>
+    <div class="cn">${dn(card)}</div>
+    <div class="ct">${card.t==='dist'?'Vitesse':card.t==='haz'?'Attaque':card.t==='rem'?'Défense':'Botte'}</div>
+    <div class="ab">
+      <button class="play" id="cplay"${canPlay?'':' disabled'}>▶ Jouer${canPlay?'':' (bloqué)'}</button>
+      <button class="disc" id="cdisc">🗑 Jeter</button>
+      <button class="pass" id="cpass">⏭ Passer le tour</button>
+      <button class="cancel" id="ccancel">✕ Annuler</button>
+    </div>
+  </div>`;
+  document.body.appendChild(d);
+  d.querySelector('#cplay').addEventListener('click',()=>{
+    if(card.t==='haz'){
+      document.body.removeChild(d);
+      showTargetSelect(card, (targetId)=>{
+        ws.send(JSON.stringify({type:'play_card',cardIndex:idx,targetId}));
+      });
+      return;
+    }
+    ws.send(JSON.stringify({type:'play_card',cardIndex:idx}));
+    document.body.removeChild(d);
+  });
+  d.querySelector('#cdisc').addEventListener('click',()=>{
+    ws.send(JSON.stringify({type:'discard_card',cardIndex:idx}));
+    document.body.removeChild(d);
+  });
+  d.querySelector('#cpass').addEventListener('click',()=>{
+    ws.send(JSON.stringify({type:'end_turn'}));
+    document.body.removeChild(d);
+  });
+  d.querySelector('#ccancel').addEventListener('click',()=>document.body.removeChild(d));
 }
 
-function targetSelect(card, onPick){
+function canPlayCardCheck(card, player){
+  if(card.t==='dist') return !player.battlePile && !(player.speedPile&&card.v>50) && player.distance+card.v<=1000;
+  if(card.t==='haz'){
+    const targets=gs.players.filter(p=>p.id!==pId);
+    return targets.some(p=>p.isConnected!==false && !(card.s==='speed_limit'&&p.speedPile) && !((p.safeties||[]).some(s=>hm(card.s,s))));
+  }
+  if(card.t==='rem'){
+    const h=card.s==='end_speed'?'speed_limit':card.s==='go'?'stop':card.s;
+    return h==='speed_limit'?!!player.speedPile:player.battlePile===h;
+  }
+  if(card.t==='safe') return !player.safeties.includes(card.s);
+  return false;
+}
+
+function showTargetSelect(card, onPick){
   const ot=gs.players.filter(p=>p.id!==pId);
   let h='<div class="target-overlay"><h3>🎯 Choisis une cible</h3>';
   ot.forEach(p=>{
     let dis=false,w='';
     if(p.isConnected===false){dis=true;w='Déco'}
     else if(card.s==='speed_limit'&&p.speedPile){dis=true;w='Déjà limité'}
-    else if(card.s!=='speed_limit'&&p.battlePile){dis=true;w='Bloqué'}
     else if((p.safeties||[]).some(s=>hm(card.s,s))){dis=true;w='Protégé'}
     h+=`<div class="target-opp${dis?' disabled':''}" data-id="${p.id}">${p.name} ${w?'— '+w:''}</div>`;
   });
   h+=`<button class="target-cancel">Annuler</button></div>`;
   const d=document.createElement('div');d.innerHTML=h;document.body.appendChild(d);
   d.querySelectorAll('.target-opp:not(.disabled)').forEach(el=>{el.addEventListener('click',()=>{
-    selTarget=el.dataset.id;targetMode=false;document.body.removeChild(d);
-    renderHand(gs.players.find(p=>p.id===pId));updateBtns();
-    if(onPick)onPick();
+    document.body.removeChild(d);
+    if(onPick)onPick(el.dataset.id);
   })});
-  d.querySelector('.target-cancel').addEventListener('click',()=>{
-    selCard=null;selTarget=null;targetMode=false;document.body.removeChild(d);
-    renderHand(gs.players.find(p=>p.id===pId));updateBtns();
-  });
+  d.querySelector('.target-cancel').addEventListener('click',()=>document.body.removeChild(d));
 }
 
 function updateBtns(me){
-  const pb=document.getElementById('playb'),db=document.getElementById('discb'),eb=document.getElementById('endb');
+  const eb=document.getElementById('endb');
   const myTurn=gs&&gs.players[gs.currentPlayer]?.id===pId;
-  pb.disabled=selCard===null||!myTurn;
-  db.disabled=selCard===null||!myTurn;
   eb.disabled=!myTurn;
 }
 
@@ -389,35 +433,8 @@ document.getElementById('copyhint').addEventListener('click',()=>{
   setTimeout(()=>document.getElementById('copyhint').textContent='📋 Copier',2000);
 });
 
-// Auto-draw is handled by the server at turn start
-document.getElementById('discb').addEventListener('click',()=>{
-  if(selCard===null||!ws)return;
-  ws.send(JSON.stringify({type:'discard_card',cardIndex:selCard}));
-  selCard=null;selTarget=null;
-});
 document.getElementById('endb').addEventListener('click',()=>{
   if(ws)ws.send(JSON.stringify({type:'end_turn'}));
-  selCard=null;selTarget=null;
-});
-
-document.getElementById('playb').addEventListener('click',()=>{
-  if(selCard===null||!ws)return;
-  const me=gs&&gs.players.find(p=>p.id===pId);
-  if(!me||!me.hand[selCard])return;
-  const card=me.hand[selCard];
-  if(card.t==='haz' && !selTarget){
-    targetMode=true;
-    targetSelect(card, ()=>{
-      const msg={type:'play_card',cardIndex:selCard,targetId:selTarget};
-      ws.send(JSON.stringify(msg));
-      selCard=null;selTarget=null;targetMode=false;
-    });
-    return;
-  }
-  const msg={type:'play_card',cardIndex:selCard};
-  if(card.t==='haz'&&selTarget)msg.targetId=selTarget;
-  ws.send(JSON.stringify(msg));
-  selCard=null;selTarget=null;
 });
 
 document.getElementById('replay-btn').addEventListener('click',()=>{S('waiting')});

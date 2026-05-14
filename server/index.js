@@ -80,7 +80,7 @@ function createGame(room) {
   for (const pl of p) {
     pl.hand = [];
     pl.distance = 0;
-    pl.battlePile = null;
+    pl.battlePile = 'stop';
     pl.speedPile = null;
     pl.safeties = [];
     pl.hasDrawn = false;
@@ -128,10 +128,8 @@ function canPlayCard(player, card, room, target) {
   }
   if (card.t === 'haz') {
     if (!target || target.id === player.id) return 'Cible invalide';
-    if (target.battlePile && card.s !== 'speed_limit') return 'Déjà un incident';
     if (card.s === 'speed_limit' && target.speedPile) return 'Déjà limité';
     if (target.safeties.some(s => hazardMatch(card.s, s))) return 'Protégé par une botte';
-    if (card.s !== 'speed_limit' && target.battlePile) return 'Cible déjà bloquée';
     return null;
   }
   if (card.t === 'rem') {
