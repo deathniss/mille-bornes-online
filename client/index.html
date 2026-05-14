@@ -355,7 +355,7 @@ function canPlayCardCheck(card, player){
   if(card.t==='haz'){
     if(player.battlePile) return false;
     const targets=gs.players.filter(p=>p.id!==pId);
-    return targets.some(p=>p.isConnected!==false && !(card.s==='speed_limit'&&p.speedPile) && !((p.safeties||[]).some(s=>hm(card.s,s))));
+    return targets.some(p=>p.isConnected!==false && (card.s==='speed_limit'?!p.speedPile:!p.battlePile) && !((p.safeties||[]).some(s=>hm(card.s,s))));
   }
   if(card.t==='rem'){
     const h=card.s==='end_speed'?'speed_limit':card.s==='go'?'stop':card.s;
@@ -372,7 +372,7 @@ function showTargetSelect(card, onPick){
     let dis=false,w='';
     if(p.isConnected===false){dis=true;w='Déco'}
     else if(card.s==='speed_limit'&&p.speedPile){dis=true;w='Déjà limité'}
-    else if(card.s!=='speed_limit'&&p.battlePile&&!(p.battlePile==='stop'&&!p.lastAttacked)){dis=true;w='Déjà attaqué'}
+    else if(card.s!=='speed_limit'&&p.battlePile){dis=true;w='Pas démarré/bloqué'}
     else if((p.safeties||[]).some(s=>hm(card.s,s))){dis=true;w='Protégé'}
     h+=`<div class="target-opp${dis?' disabled':''}" data-id="${p.id}">${p.name} ${w?'— '+w:''}</div>`;
   });
