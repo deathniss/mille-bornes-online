@@ -222,12 +222,17 @@ const errEl=document.getElementById('err');
 
 // ===================== WEBSOCKET =====================
 function connect(){
+  const isCapacitor = typeof window.Capacitor !== 'undefined';
   let url = localStorage.getItem('srvUrl');
   if (!url) {
-    const isSecure = location.protocol === 'https:' || location.protocol === 'file:';
-    const proto = isSecure ? 'wss:' : 'ws:';
-    const host = location.host || (location.protocol === 'file:' ? 'mille-bornes-online-1.onrender.com' : 'localhost:3000');
-    url = proto + '//' + host;
+    if (isCapacitor) {
+      url = 'wss://mille-bornes-online-1.onrender.com';
+    } else {
+      const isSecure = location.protocol === 'https:' || location.protocol === 'file:';
+      const proto = isSecure ? 'wss:' : 'ws:';
+      const host = location.host || 'localhost:3000';
+      url = proto + '//' + host;
+    }
   } else {
     const isSecure = url.includes('render.com') || url.includes('heroku');
     url = (isSecure ? 'wss:' : 'ws:') + '//' + url;
