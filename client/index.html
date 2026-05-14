@@ -206,10 +206,13 @@ const errEl=document.getElementById('err');
 function connect(){
   let url = localStorage.getItem('srvUrl');
   if (!url) {
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    url = proto + '//' + (location.host || 'localhost:3000');
+    const isSecure = location.protocol === 'https:' || location.protocol === 'file:';
+    const proto = isSecure ? 'wss:' : 'ws:';
+    const host = location.host || (location.protocol === 'file:' ? 'mille-bornes-online-1.onrender.com' : 'localhost:3000');
+    url = proto + '//' + host;
   } else {
-    url = 'ws://' + url;
+    const isSecure = url.includes('render.com') || url.includes('heroku');
+    url = (isSecure ? 'wss:' : 'ws:') + '//' + url;
   }
   ws = new WebSocket(url);
   ws.onopen = ()=>console.log('connecté');
