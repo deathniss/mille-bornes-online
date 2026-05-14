@@ -392,6 +392,27 @@ wss.on('connection', (ws) => {
       return;
     }
 
+    if (msg.type === 'discard_card') {
+      const code = clientRooms.get(ws);
+      if (!code) return;
+      const room = rooms.get(code);
+      if (!room || room.phase !== 'playing') return;
+      const player = room.players.find(p => p.id === playerId);
+      if (!player || !player.hasDrawn) return ws.send(JSON.stringify({ type: 'error', message: 'Tu dois d\'abord piocher' }));
+      if (room.players[room.currentPlayer].id !== playerId) return ws.send(JSON.stringify({ type: 'error', message: "Ce n'est pas ton tour" }));
+      const cardIndex = msg.cardIndex;
+      if (cardIndex === undefined || cardIndex < 0 || cardIndex >= player.hand.length) return ws.send(JSON.stringify({ type: 'error', message: 'Carte invalide' }));
+      const card = player.hand.splice(cardIndex, 1)[0];
+      room.discard.push(card);
+      room.lastMove = { player: player.name, action: `défausse ${cardName(card)}` };
+      for (const p of room.players) {
+        if (p.ws && p.ws.readyState === 1) {
+          p.ws.send(JSON.stringify({ type: 'game_update', state: playerState(room, p.id), yourTurn: room.players[room.currentPlayer].id === p.id }));
+        }
+      }
+      return;
+    }
+
     if (msg.type === 'end_turn') {
       const code = clientRooms.get(ws);
       if (!code) return;

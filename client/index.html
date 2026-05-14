@@ -77,6 +77,8 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
 .ga button{flex:1;font-size:12px;padding:8px}
 .playb{background:#2ECC71;color:#fff}
 .playb:disabled{background:#333;color:#666;cursor:not-allowed}
+.discb{background:#E67E22;color:#fff}
+.discb:disabled{background:#333;color:#666;cursor:not-allowed}
 .endb{background:#D94A4A;color:#fff}
 .target-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 .target-overlay h3{margin-bottom:15px;color:#F39C12}
@@ -158,6 +160,7 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
     <div class="ga">
       <button class="drawb" id="drawb" style="display:none">🃏 Piocher</button>
       <button class="playb" id="playb" disabled>▶ Jouer</button>
+      <button class="discb" id="discb" disabled>🗑 Jeter</button>
       <button class="endb" id="endb">⏭ Passer</button>
     </div>
   </div>
@@ -341,9 +344,10 @@ function targetSelect(card){
 }
 
 function updateBtns(me){
-  const pb=document.getElementById('playb'),eb=document.getElementById('endb');
+  const pb=document.getElementById('playb'),db=document.getElementById('discb'),eb=document.getElementById('endb');
   const myTurn=gs&&gs.players[gs.currentPlayer]?.id===pId;
   pb.disabled=selCard===null||!myTurn||targetMode;
+  db.disabled=selCard===null||!myTurn;
   eb.disabled=!myTurn;
 }
 
@@ -387,6 +391,11 @@ document.getElementById('copyhint').addEventListener('click',()=>{
 });
 
 // Auto-draw is handled by the server at turn start
+document.getElementById('discb').addEventListener('click',()=>{
+  if(selCard===null||!ws)return;
+  ws.send(JSON.stringify({type:'discard_card',cardIndex:selCard}));
+  selCard=null;selTarget=null;
+});
 document.getElementById('endb').addEventListener('click',()=>{
   if(ws)ws.send(JSON.stringify({type:'end_turn'}));
   selCard=null;selTarget=null;
