@@ -75,7 +75,6 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
 .card.safe{background:linear-gradient(135deg,#6e5a1a,#b89a2a);border-color:#F39C12}
 .ga{display:flex;gap:6px;padding:5px 10px 10px;background:#0f3460;flex-shrink:0}
 .ga button{flex:1;font-size:12px;padding:8px}
-.drawb{background:#4A90D9;color:#fff}
 .playb{background:#2ECC71;color:#fff}
 .playb:disabled{background:#333;color:#666;cursor:not-allowed}
 .endb{background:#D94A4A;color:#fff}
@@ -157,7 +156,7 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
       <div class="hand" id="hand"></div>
     </div>
     <div class="ga">
-      <button class="drawb" id="drawb">🃏 Piocher</button>
+      <button class="drawb" id="drawb" style="display:none">🃏 Piocher</button>
       <button class="playb" id="playb" disabled>▶ Jouer</button>
       <button class="endb" id="endb">⏭ Passer</button>
     </div>
@@ -310,7 +309,7 @@ function renderHand(me){
 function selectCard(i){
   if(!gs)return;
   const me=gs.players.find(p=>p.id===pId);
-  if(!me||!me.hand||!me.hand[i]||gs.players[gs.currentPlayer]?.id!==pId||!me.hasDrawn)return;
+  if(!me||!me.hand||!me.hand[i]||gs.players[gs.currentPlayer]?.id!==pId)return;
   const card=me.hand[i];
   if(selCard===i){selCard=null;selTarget=null;targetMode=false;renderHand(me);updateBtns(me);return;}
   selCard=i;selTarget=null;targetMode=false;
@@ -342,12 +341,9 @@ function targetSelect(card){
 }
 
 function updateBtns(me){
-  const db=document.getElementById('drawb'),pb=document.getElementById('playb'),eb=document.getElementById('endb');
+  const pb=document.getElementById('playb'),eb=document.getElementById('endb');
   const myTurn=gs&&gs.players[gs.currentPlayer]?.id===pId;
-  const drawn=me&&me.hasDrawn;
-  db.disabled=!myTurn||drawn;
-  db.textContent=drawn?'✅ Pioché':'🃏 Piocher';
-  pb.disabled=selCard===null||(myTurn&&!drawn)||targetMode;
+  pb.disabled=selCard===null||!myTurn||targetMode;
   eb.disabled=!myTurn;
 }
 
@@ -390,7 +386,7 @@ document.getElementById('copyhint').addEventListener('click',()=>{
   setTimeout(()=>document.getElementById('copyhint').textContent='📋 Copier',2000);
 });
 
-document.getElementById('drawb').addEventListener('click',()=>{if(ws)ws.send(JSON.stringify({type:'draw_card'}))});
+// Auto-draw is handled by the server at turn start
 document.getElementById('endb').addEventListener('click',()=>{
   if(ws)ws.send(JSON.stringify({type:'end_turn'}));
   selCard=null;selTarget=null;

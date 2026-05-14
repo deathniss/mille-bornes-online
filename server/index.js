@@ -85,7 +85,7 @@ function createGame(room) {
     pl.safeties = [];
     pl.hasDrawn = false;
   }
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     for (const pl of p) {
       if (deck.length > 0) pl.hand.push(deck.pop());
     }
@@ -210,12 +210,8 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
     return { winner: winner.id, deckEmpty: true };
   }
 
-  // Next turn
-  do {
-    room.currentPlayer = (room.currentPlayer + 1) % room.players.length;
-  } while (!room.players[room.currentPlayer].isConnected && room.players.length > 1);
-
-  room.turnCount++;
+  // Advance to next turn (auto-draw included)
+  advanceTurn(room);
   return { success: true };
 }
 
@@ -230,6 +226,18 @@ function drawForPlayer(room, playerId) {
   }
   player.hasDrawn = true;
   return { success: true };
+}
+
+function advanceTurn(room) {
+  do {
+    room.currentPlayer = (room.currentPlayer + 1) % room.players.length;
+  } while (!room.players[room.currentPlayer].isConnected && room.players.length > 1);
+  room.turnCount++;
+  for (const p of room.players) p.hasDrawn = false;
+  // Auto-draw for the next player
+  const next = room.players[room.currentPlayer];
+  if (room.deck.length > 0) next.hand.push(room.deck.pop());
+  next.hasDrawn = true;
 }
 
 function broadcast(room, msg) {
@@ -327,6 +335,9 @@ wss.on('connection', (ws) => {
       if (room.hostId !== playerId) return ws.send(JSON.stringify({ type: 'error', message: 'Seul l\'hôte peut lancer' }));
       if (room.players.length < 2) return ws.send(JSON.stringify({ type: 'error', message: 'Minimum 2 joueurs' }));
       createGame(room);
+      // Auto-draw for first player
+      if (room.deck.length > 0) room.players[room.currentPlayer].hand.push(room.deck.pop());
+      room.players[room.currentPlayer].hasDrawn = true;
       for (const p of room.players) {
         if (p.ws && p.ws.readyState === 1) {
           p.ws.send(JSON.stringify({ type: 'game_start', state: playerState(room, p.id), yourTurn: room.players[room.currentPlayer].id === p.id }));
@@ -367,16 +378,15 @@ wss.on('connection', (ws) => {
         }
         return;
       }
-      if (!result.extraTurn) {
-        // Reset draw flag for next player
-        for (const p of room.players) p.hasDrawn = false;
-      } else {
+      if (result.extraTurn) {
         const cur = room.players[room.currentPlayer];
-        cur.hasDrawn = false; // Extra turn: need to draw again
+        // Extra turn: keep turn, auto-draw again
+        if (room.deck.length > 0) cur.hand.push(room.deck.pop());
+        cur.hasDrawn = true;
       }
       for (const p of room.players) {
         if (p.ws && p.ws.readyState === 1) {
-          p.ws.send(JSON.stringify({ type: 'game_update', state: playerState(room, p.id), yourTurn: result.extraTurn ? room.players[room.currentPlayer].id === p.id : room.players[room.currentPlayer].id === p.id }));
+          p.ws.send(JSON.stringify({ type: 'game_update', state: playerState(room, p.id), yourTurn: room.players[room.currentPlayer].id === p.id }));
         }
       }
       return;
@@ -389,12 +399,7 @@ wss.on('connection', (ws) => {
       if (!room || room.phase !== 'playing') return;
       if (room.players[room.currentPlayer].id !== playerId) return;
       room.lastMove = null;
-      do {
-        room.currentPlayer = (room.currentPlayer + 1) % room.players.length;
-      } while (!room.players[room.currentPlayer].isConnected && room.players.length > 1);
-      room.turnCount++;
-      for (const p of room.players) p.hasDrawn = false;
-      room.lastMove = null;
+      advanceTurn(room);
       for (const p of room.players) {
         if (p.ws && p.ws.readyState === 1) {
           p.ws.send(JSON.stringify({ type: 'game_update', state: playerState(room, p.id), yourTurn: room.players[room.currentPlayer].id === p.id }));
@@ -424,10 +429,7 @@ wss.on('connection', (ws) => {
           player.isConnected = false;
           player.ws = null;
           if (room.phase === 'playing' && room.players[room.currentPlayer]?.id === playerId) {
-            do {
-              room.currentPlayer = (room.currentPlayer + 1) % room.players.length;
-            } while (!room.players[room.currentPlayer].isConnected && room.players.length > 1);
-            for (const p of room.players) p.hasDrawn = false;
+            advanceTurn(room);
             room.lastMove = null;
             broadcast(room, { type: 'game_update', state: playerState(room, p.id), yourTurn: room.players[room.currentPlayer]?.id === p.id });
           }
