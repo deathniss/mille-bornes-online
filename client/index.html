@@ -343,7 +343,7 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 
 <script>
 // iOS height fix (100vh includes URL bar)
-(function(){var h=function(){var v=window.innerHeight;document.documentElement.style.setProperty('--vh',v+'px')};h();window.addEventListener('resize',h);window.addEventListener('orientationchange',function(){setTimeout(h,100)})})();
+(function(){var h=function(){var v=window.innerHeight/100;document.documentElement.style.setProperty('--vh',v+'px')};h();window.addEventListener('resize',h);window.addEventListener('orientationchange',function(){setTimeout(h,100)})})();
 // ===================== CONFIG =====================
 const MAX_PLAYERS = 8;
 const CARD_NAMES = {
