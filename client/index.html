@@ -252,60 +252,117 @@ const game=document.getElementById('game'),results=document.getElementById('resu
 const errEl=document.getElementById('err');
 
 // ===================== SOUND CONFIG =====================
-// 🔧 Pour utiliser tes propres fichiers audio :
-// 1. Crée un dossier "sounds" à côté de index.html
-// 2. Mets tes .mp3/.wav dedans
-// 3. Change "file:null" en "file:'sounds/tonfichier.mp3'"
-// Ex: dist:{type:'tone',freq:523,...} ou dist:{type:'file',src:'sounds/moteur.mp3',vol:0.5}
-const SOUNDS = {
-  dist:{type:'tone',freq:523,dur:0.12,wave:'sine',vol:0.12},
-  haz:{type:'tone',freq:220,dur:0.25,wave:'sawtooth',vol:0.1},
-  rem:{type:'tone',freq:440,dur:0.2,wave:'triangle',vol:0.12},
-  safe:{type:'tone',freq:660,dur:0.1,wave:'sine',vol:0.1},
-  safe2:{type:'tone',freq:880,dur:0.15,wave:'sine',vol:0.1},
-  turn:{type:'tone',freq:440,dur:0.08,wave:'sine',vol:0.1},
-  turn2:{type:'tone',freq:554,dur:0.08,wave:'sine',vol:0.1},
-  turn3:{type:'tone',freq:660,dur:0.12,wave:'sine',vol:0.12},
-  discard:{type:'tone',freq:300,dur:0.15,wave:'triangle',vol:0.08}
-};
-
-// Cache les fichiers audio chargés
-const audioCache={};
+// Sons de voiture générés via Web Audio API
 let audioCtx=null,sfxOn=localStorage.getItem('sfx')!=='off',vibOn=localStorage.getItem('vib')!=='off';
 function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
 
-function playSound(cfg){
-  if(!sfxOn||!cfg)return;
-  if(cfg.type==='file'&&cfg.src){
-    // Joue un fichier audio
-    try{
-      const a=new Audio(cfg.src);
-      a.volume=cfg.vol||0.5;
-      a.play().catch(()=>{});
-    }catch(e){}
-  }else if(cfg.type==='tone'){
-    // Joue un son synthétisé
-    try{
-      const c=getCtx(),o=c.createOscillator(),g=c.createGain();
-      o.type=cfg.wave||'sine';o.frequency.value=cfg.freq||440;
-      g.gain.value=cfg.vol||0.15;g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+(cfg.dur||0.2));
-      o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+(cfg.dur||0.2));
-    }catch(e){}
-  }
+function playEngineRev(duration=0.4,vol=0.15){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime;
+    // Oscillateur principal (moteur)
+    const o=c.createOscillator(),g=c.createGain();
+    o.type='sawtooth';o.frequency.setValueAtTime(80,t);o.frequency.exponentialRampToValueAtTime(200,t+duration);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+duration);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+duration);
+    // Sous-harmonique (plus grave)
+    const o2=c.createOscillator(),g2=c.createGain();
+    o2.type='sine';o2.frequency.setValueAtTime(40,t);o2.frequency.exponentialRampToValueAtTime(100,t+duration);
+    g2.gain.setValueAtTime(vol*0.5,t);g2.gain.exponentialRampToValueAtTime(0.001,t+duration);
+    o2.connect(g2);g2.connect(c.destination);o2.start(t);o2.stop(t+duration);
+  }catch(e){}
+}
+function playHorn(vol=0.2){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime;
+    // Klaxon deux tons
+    const f1=420,f2=560;
+    [f1,f2].forEach((f,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.type='square';o.frequency.value=f;
+      g.gain.setValueAtTime(vol*0.3,t+i*0.15);
+      g.gain.setValueAtTime(vol*0.3,t+i*0.15+0.25);
+      g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+0.35);
+      o.connect(g);g.connect(c.destination);o.start(t+i*0.15);o.stop(t+i*0.15+0.35);
+    });
+  }catch(e){}
+}
+function playScreech(vol=0.12){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime;
+    // Bruit de pneus qui crissent (bruit blanc filtré)
+    const bufSize=c.sampleRate*0.3,buf=c.createBuffer(1,bufSize,c.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++)data[i]=Math.random()*2-1;
+    const src=c.createBufferSource();src.buffer=buf;
+    const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=3000;bp.Q.value=0.5;
+    const g=c.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    src.connect(bp);bp.connect(g);g.connect(c.destination);src.start(t);
+  }catch(e){}
+}
+function playGarage(vol=0.15){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime;
+    // Son "clank" mécanique + moteur
+    const o=c.createOscillator(),g=c.createGain();
+    o.type='triangle';o.frequency.setValueAtTime(800,t);o.frequency.exponentialRampToValueAtTime(200,t+0.15);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.2);
+    // Petite vibration après
+    setTimeout(()=>playEngineRev(0.15,vol*0.5),100);
+  }catch(e){}
+}
+function playVictory(vol=0.15){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime;
+    // Drapeau à damier - montée de notes
+    [400,500,630,800].forEach((f,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(vol,t+i*0.1);
+      g.gain.setValueAtTime(vol,t+i*0.1+0.08);
+      g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.15);
+      o.connect(g);g.connect(c.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.15);
+    });
+    // Bruit de moteur qui s'éloigne
+    setTimeout(()=>playEngineRev(0.5,vol*0.4),200);
+  }catch(e){}
+}
+function playDoubleBeep(vol=0.1){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime;
+    [600,800].forEach((f,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(vol,t+i*0.12);
+      g.gain.exponentialRampToValueAtTime(0.001,t+i*0.12+0.08);
+      o.connect(g);g.connect(c.destination);o.start(t+i*0.12);o.stop(t+i*0.12+0.08);
+    });
+  }catch(e){}
+}
+function playDiscardSound(vol=0.08){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime;
+    // Bruit de carte/ticket
+    const o=c.createOscillator(),g=c.createGain();
+    o.type='triangle';o.frequency.setValueAtTime(1200,t);o.frequency.exponentialRampToValueAtTime(400,t+0.08);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.1);
+  }catch(e){}
 }
 function playCardSound(type,sub){
-  const s=SOUNDS;
-  if(type==='dist')playSound(s.dist);
-  else if(type==='haz')playSound(s.haz);
-  else if(type==='rem')playSound(s.rem);
-  else if(type==='safe'){playSound(s.safe);setTimeout(()=>playSound(s.safe2),100)}
+  if(type==='dist')playEngineRev(0.35,0.12);
+  else if(type==='haz'){if(Math.random()>0.5)playHorn(0.18);else playScreech(0.1)}
+  else if(type==='rem')playGarage(0.12);
+  else if(type==='safe')playVictory(0.12);
 }
-function playTurnSound(){
-  const s=SOUNDS;
-  playSound(s.turn);
-  setTimeout(()=>playSound(s.turn2),80);
-  setTimeout(()=>playSound(s.turn3),160);
-}
+function playTurnSound(){playDoubleBeep(0.1)}
 function vibrate(ms){
   if(!vibOn)return;
   try{navigator.vibrate(ms)}catch(e){}
@@ -466,7 +523,7 @@ function showCardMenu(idx){
     document.body.removeChild(d);
   });
   d.querySelector('#cdisc').addEventListener('click',()=>{
-    playSound(SOUNDS.discard);
+    playDiscardSound();
     ws.send(JSON.stringify({type:'discard_card',cardIndex:idx}));
     document.body.removeChild(d);
   });
