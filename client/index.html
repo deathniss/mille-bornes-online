@@ -115,6 +115,14 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 .toggle.on{background:#27AE60}
 .toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
 .toggle.on::after{transform:translateX(20px)}
+.snd-cat{background:rgba(255,255,255,0.08);padding:8px 12px;border-radius:8px;margin:3px 0;cursor:pointer;font-weight:600;font-size:12px;text-align:left;transition:background .2s}
+.snd-cat:hover{background:rgba(255,255,255,0.15)}
+.snd-cat::before{content:attr(data-cat);display:none}
+.snd-params{display:none;padding:6px 8px;background:rgba(0,0,0,0.2);border-radius:6px;margin:2px 0}
+.snd-params.open{display:block}
+.snd-params label{display:flex;align-items:center;gap:6px;font-size:10px;color:#aaa;margin:2px 0}
+.snd-params label input[type=range]{flex:1;height:4px}
+.snd-params label span{min-width:30px;text-align:right;font-size:10px;color:#F39C12;font-weight:600}
 @media(min-width:600px){
   .card{width:72px;height:94px}.card .ci{font-size:24px}.card .cn{font-size:9px}.card .cv{font-size:18px}
   .st-row{grid-template-columns:1fr 80px 120px 50px;font-size:12px}
@@ -159,13 +167,71 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
   </div>
 </div>
 
-<div id="audio-settings" class="cam" style="display:none">
-  <div class="c">
+<div id="audio-settings" class="cam" style="display:none;z-index:1001">
+  <div class="c" style="max-height:90vh;overflow-y:auto">
     <div class="ci">🔊</div>
     <div class="cn">Préférences</div>
     <div class="ab" style="padding:8px 0">
       <div class="toggle-row"><label>🔊 Son</label><div class="toggle on" id="toggle-sound"></div></div>
       <div class="toggle-row"><label>📳 Vibrations</label><div class="toggle on" id="toggle-vibrate"></div></div>
+    </div>
+    <div class="cn" style="font-size:14px;margin-top:6px">🎛️ Sons personnalisés</div>
+    <div class="ab" style="padding:4px 0;font-size:11px">
+      <div class="snd-cat" data-cat="dist" onclick="toggleSndCat(this)">🏎️ Moteur (Distance)</div>
+      <div class="snd-params" id="snd-dist">
+        <label>Volume <input type="range" min="0" max="1" step="0.01" id="snd-dist-vol" oninput="applySoundSliders();this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"><span></span></label>
+        <label>Grave <input type="range" min="20" max="200" step="1" id="snd-dist-grave" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Aigu <input type="range" min="50" max="400" step="1" id="snd-dist-aigu" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Durée <input type="range" min="0.05" max="1" step="0.01" id="snd-dist-dur" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <button class="btn-gold" style="font-size:10px;padding:4px 8px" onclick="playEngineRev()">▶️ Tester</button>
+      </div>
+      <div class="snd-cat" data-cat="horn" onclick="toggleSndCat(this)">📯 Klaxon (Attaque)</div>
+      <div class="snd-params" id="snd-horn">
+        <label>Volume <input type="range" min="0" max="1" step="0.01" id="snd-horn-vol" oninput="applySoundSliders();this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"><span></span></label>
+        <label>Ton 1 <input type="range" min="200" max="600" step="5" id="snd-horn-grave" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Ton 2 <input type="range" min="300" max="800" step="5" id="snd-horn-aigu" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Durée <input type="range" min="0.1" max="0.6" step="0.01" id="snd-horn-dur" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <button class="btn-gold" style="font-size:10px;padding:4px 8px" onclick="playHorn()">▶️ Tester</button>
+      </div>
+      <div class="snd-cat" data-cat="screech" onclick="toggleSndCat(this)">🛞 Crissements (Attaque)</div>
+      <div class="snd-params" id="snd-screech">
+        <label>Volume <input type="range" min="0" max="1" step="0.01" id="snd-screech-vol" oninput="applySoundSliders();this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"><span></span></label>
+        <label>Fréquence <input type="range" min="500" max="8000" step="50" id="snd-screech-freq" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Durée <input type="range" min="0.1" max="0.6" step="0.01" id="snd-screech-dur" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <button class="btn-gold" style="font-size:10px;padding:4px 8px" onclick="playScreech()">▶️ Tester</button>
+      </div>
+      <div class="snd-cat" data-cat="garage" onclick="toggleSndCat(this)">🔧 Garage (Défense)</div>
+      <div class="snd-params" id="snd-garage">
+        <label>Volume <input type="range" min="0" max="1" step="0.01" id="snd-garage-vol" oninput="applySoundSliders();this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"><span></span></label>
+        <label>Grave <input type="range" min="200" max="1200" step="5" id="snd-garage-grave" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Aigu <input type="range" min="50" max="400" step="1" id="snd-garage-aigu" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Durée <input type="range" min="0.05" max="0.4" step="0.01" id="snd-garage-dur" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <button class="btn-gold" style="font-size:10px;padding:4px 8px" onclick="playGarage()">▶️ Tester</button>
+      </div>
+      <div class="snd-cat" data-cat="victoire" onclick="toggleSndCat(this)">🏆 Victoire (Botte)</div>
+      <div class="snd-params" id="snd-victoire">
+        <label>Volume <input type="range" min="0" max="1" step="0.01" id="snd-victoire-vol" oninput="applySoundSliders();this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"><span></span></label>
+        <label>Grave <input type="range" min="200" max="600" step="5" id="snd-victoire-grave" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Aigu <input type="range" min="500" max="1200" step="5" id="snd-victoire-aigu" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Durée <input type="range" min="0.05" max="0.3" step="0.01" id="snd-victoire-dur" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <button class="btn-gold" style="font-size:10px;padding:4px 8px" onclick="playVictory()">▶️ Tester</button>
+      </div>
+      <div class="snd-cat" data-cat="beep" onclick="toggleSndCat(this)">🔔 Bips (Tour)</div>
+      <div class="snd-params" id="snd-beep">
+        <label>Volume <input type="range" min="0" max="1" step="0.01" id="snd-beep-vol" oninput="applySoundSliders();this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"><span></span></label>
+        <label>Bip 1 <input type="range" min="300" max="800" step="5" id="snd-beep-grave" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Bip 2 <input type="range" min="500" max="1000" step="5" id="snd-beep-aigu" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Durée <input type="range" min="0.03" max="0.2" step="0.01" id="snd-beep-dur" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <button class="btn-gold" style="font-size:10px;padding:4px 8px" onclick="playDoubleBeep()">▶️ Tester</button>
+      </div>
+      <div class="snd-cat" data-cat="discard" onclick="toggleSndCat(this)">🃏 Jeter</div>
+      <div class="snd-params" id="snd-discard">
+        <label>Volume <input type="range" min="0" max="1" step="0.01" id="snd-discard-vol" oninput="applySoundSliders();this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"><span></span></label>
+        <label>Grave <input type="range" min="500" max="2000" step="10" id="snd-discard-grave" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Aigu <input type="range" min="100" max="600" step="5" id="snd-discard-aigu" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <label>Durée <input type="range" min="0.03" max="0.2" step="0.01" id="snd-discard-dur" oninput="applySoundSliders();this.nextElementSibling.textContent=this.value"><span></span></label>
+        <button class="btn-gold" style="font-size:10px;padding:4px 8px" onclick="playDiscardSound()">▶️ Tester</button>
+      </div>
     </div>
     <div class="ab">
       <button class="cancel" id="audio-close">Fermer</button>
@@ -253,119 +319,162 @@ const errEl=document.getElementById('err');
 
 // ===================== SOUND CONFIG =====================
 // Sons de voiture générés via Web Audio API
+// Personnalisables dans le menu 🔊 Préférences > Sons personnalisés
 let audioCtx=null,sfxOn=localStorage.getItem('sfx')!=='off',vibOn=localStorage.getItem('vib')!=='off';
 function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
 
-function playEngineRev(duration=0.4,vol=0.15){
+function defCfg(v){return JSON.parse(localStorage.getItem('sndCfg')||'null')||v}
+function saveCfg(){localStorage.setItem('sndCfg',JSON.stringify(snd))}
+
+const snd = {
+  dist:{vol:0.12,grave:60,aigu:180,dur:0.35},
+  horn:{vol:0.18,grave:360,aigu:500,dur:0.35},
+  screech:{vol:0.1,freq:3000,dur:0.3},
+  garage:{vol:0.12,grave:600,aigu:150,dur:0.2},
+  victoire:{vol:0.12,grave:350,aigu:750,dur:0.1},
+  beep:{vol:0.1,grave:550,aigu:750,dur:0.08},
+  discard:{vol:0.08,grave:1000,aigu:300,dur:0.1}
+};
+// Charger config sauvegardée
+['dist','horn','screech','garage','victoire','beep','discard'].forEach(k=>{
+  const c=defCfg(null);if(c&&c[k])Object.assign(snd[k],c[k])
+});
+
+function playEngineRev(){
   if(!sfxOn)return;
   try{
-    const c=getCtx(),t=c.currentTime;
-    // Oscillateur principal (moteur)
+    const c=getCtx(),t=c.currentTime,d=snd.dist;
     const o=c.createOscillator(),g=c.createGain();
-    o.type='sawtooth';o.frequency.setValueAtTime(80,t);o.frequency.exponentialRampToValueAtTime(200,t+duration);
-    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+duration);
-    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+duration);
-    // Sous-harmonique (plus grave)
+    o.type='sawtooth';o.frequency.setValueAtTime(d.grave,t);o.frequency.exponentialRampToValueAtTime(d.aigu,t+d.dur);
+    g.gain.setValueAtTime(d.vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+d.dur);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d.dur);
     const o2=c.createOscillator(),g2=c.createGain();
-    o2.type='sine';o2.frequency.setValueAtTime(40,t);o2.frequency.exponentialRampToValueAtTime(100,t+duration);
-    g2.gain.setValueAtTime(vol*0.5,t);g2.gain.exponentialRampToValueAtTime(0.001,t+duration);
-    o2.connect(g2);g2.connect(c.destination);o2.start(t);o2.stop(t+duration);
+    o2.type='sine';o2.frequency.setValueAtTime(d.grave*0.5,t);o2.frequency.exponentialRampToValueAtTime(d.aigu*0.5,t+d.dur);
+    g2.gain.setValueAtTime(d.vol*0.5,t);g2.gain.exponentialRampToValueAtTime(0.001,t+d.dur);
+    o2.connect(g2);g2.connect(c.destination);o2.start(t);o2.stop(t+d.dur);
   }catch(e){}
 }
-function playHorn(vol=0.2){
+function playHorn(){
   if(!sfxOn)return;
   try{
-    const c=getCtx(),t=c.currentTime;
-    // Klaxon deux tons
-    const f1=420,f2=560;
+    const c=getCtx(),t=c.currentTime,h=snd.horn;
+    const f1=h.grave,f2=h.aigu;
     [f1,f2].forEach((f,i)=>{
       const o=c.createOscillator(),g=c.createGain();
       o.type='square';o.frequency.value=f;
-      g.gain.setValueAtTime(vol*0.3,t+i*0.15);
-      g.gain.setValueAtTime(vol*0.3,t+i*0.15+0.25);
-      g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+0.35);
-      o.connect(g);g.connect(c.destination);o.start(t+i*0.15);o.stop(t+i*0.15+0.35);
+      g.gain.setValueAtTime(h.vol*0.3,t+i*0.15);
+      g.gain.setValueAtTime(h.vol*0.3,t+i*0.15+h.dur-0.1);
+      g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+h.dur);
+      o.connect(g);g.connect(c.destination);o.start(t+i*0.15);o.stop(t+i*0.15+h.dur);
     });
   }catch(e){}
 }
-function playScreech(vol=0.12){
+function playScreech(){
   if(!sfxOn)return;
   try{
-    const c=getCtx(),t=c.currentTime;
-    // Bruit de pneus qui crissent (bruit blanc filtré)
-    const bufSize=c.sampleRate*0.3,buf=c.createBuffer(1,bufSize,c.sampleRate);
+    const c=getCtx(),t=c.currentTime,sc=snd.screech;
+    const bufSize=c.sampleRate*sc.dur,buf=c.createBuffer(1,bufSize,c.sampleRate);
     const data=buf.getChannelData(0);
     for(let i=0;i<bufSize;i++)data[i]=Math.random()*2-1;
     const src=c.createBufferSource();src.buffer=buf;
-    const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=3000;bp.Q.value=0.5;
-    const g=c.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=sc.freq;bp.Q.value=0.5;
+    const g=c.createGain();g.gain.setValueAtTime(sc.vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+sc.dur);
     src.connect(bp);bp.connect(g);g.connect(c.destination);src.start(t);
   }catch(e){}
 }
-function playGarage(vol=0.15){
+function playGarage(){
   if(!sfxOn)return;
   try{
-    const c=getCtx(),t=c.currentTime;
-    // Son "clank" mécanique + moteur
-    const o=c.createOscillator(),g=c.createGain();
-    o.type='triangle';o.frequency.setValueAtTime(800,t);o.frequency.exponentialRampToValueAtTime(200,t+0.15);
-    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
-    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.2);
-    // Petite vibration après
-    setTimeout(()=>playEngineRev(0.15,vol*0.5),100);
+    const c=getCtx(),t=c.currentTime,g=snd.garage;
+    const o=c.createOscillator(),ga=c.createGain();
+    o.type='triangle';o.frequency.setValueAtTime(g.grave,t);o.frequency.exponentialRampToValueAtTime(g.aigu,t+g.dur);
+    ga.gain.setValueAtTime(g.vol,t);ga.gain.exponentialRampToValueAtTime(0.001,t+g.dur);
+    o.connect(ga);ga.connect(c.destination);o.start(t);o.stop(t+g.dur);
   }catch(e){}
 }
-function playVictory(vol=0.15){
+function playVictory(){
   if(!sfxOn)return;
   try{
-    const c=getCtx(),t=c.currentTime;
-    // Drapeau à damier - montée de notes
-    [400,500,630,800].forEach((f,i)=>{
+    const c=getCtx(),t=c.currentTime,v=snd.victoire;
+    [v.grave,v.grave*1.3,v.grave*1.7,v.aigu].forEach((f,i)=>{
       const o=c.createOscillator(),g=c.createGain();
       o.type='sine';o.frequency.value=f;
-      g.gain.setValueAtTime(vol,t+i*0.1);
-      g.gain.setValueAtTime(vol,t+i*0.1+0.08);
-      g.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.15);
-      o.connect(g);g.connect(c.destination);o.start(t+i*0.1);o.stop(t+i*0.1+0.15);
-    });
-    // Bruit de moteur qui s'éloigne
-    setTimeout(()=>playEngineRev(0.5,vol*0.4),200);
-  }catch(e){}
-}
-function playDoubleBeep(vol=0.1){
-  if(!sfxOn)return;
-  try{
-    const c=getCtx(),t=c.currentTime;
-    [600,800].forEach((f,i)=>{
-      const o=c.createOscillator(),g=c.createGain();
-      o.type='sine';o.frequency.value=f;
-      g.gain.setValueAtTime(vol,t+i*0.12);
-      g.gain.exponentialRampToValueAtTime(0.001,t+i*0.12+0.08);
-      o.connect(g);g.connect(c.destination);o.start(t+i*0.12);o.stop(t+i*0.12+0.08);
+      g.gain.setValueAtTime(v.vol,t+i*v.dur*1.5);
+      g.gain.setValueAtTime(v.vol,t+i*v.dur*1.5+v.dur);
+      g.gain.exponentialRampToValueAtTime(0.001,t+i*v.dur*1.5+v.dur*1.5);
+      o.connect(g);g.connect(c.destination);o.start(t+i*v.dur*1.5);o.stop(t+i*v.dur*1.5+v.dur*1.5);
     });
   }catch(e){}
 }
-function playDiscardSound(vol=0.08){
+function playDoubleBeep(){
   if(!sfxOn)return;
   try{
-    const c=getCtx(),t=c.currentTime;
-    // Bruit de carte/ticket
+    const c=getCtx(),t=c.currentTime,b=snd.beep;
+    [b.grave,b.aigu].forEach((f,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(b.vol,t+i*b.dur*1.5);
+      g.gain.exponentialRampToValueAtTime(0.001,t+i*b.dur*1.5+b.dur);
+      o.connect(g);g.connect(c.destination);o.start(t+i*b.dur*1.5);o.stop(t+i*b.dur*1.5+b.dur);
+    });
+  }catch(e){}
+}
+function playDiscardSound(){
+  if(!sfxOn)return;
+  try{
+    const c=getCtx(),t=c.currentTime,d=snd.discard;
     const o=c.createOscillator(),g=c.createGain();
-    o.type='triangle';o.frequency.setValueAtTime(1200,t);o.frequency.exponentialRampToValueAtTime(400,t+0.08);
-    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
-    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.1);
+    o.type='triangle';o.frequency.setValueAtTime(d.grave,t);o.frequency.exponentialRampToValueAtTime(d.aigu,t+d.dur);
+    g.gain.setValueAtTime(d.vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+d.dur);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d.dur);
   }catch(e){}
 }
 function playCardSound(type,sub){
-  if(type==='dist')playEngineRev(0.35,0.12);
-  else if(type==='haz'){if(Math.random()>0.5)playHorn(0.18);else playScreech(0.1)}
-  else if(type==='rem')playGarage(0.12);
-  else if(type==='safe')playVictory(0.12);
+  if(type==='dist')playEngineRev();
+  else if(type==='haz'){if(Math.random()>0.5)playHorn();else playScreech()}
+  else if(type==='rem')playGarage();
+  else if(type==='safe')playVictory();
 }
-function playTurnSound(){playDoubleBeep(0.1)}
+function playTurnSound(){playDoubleBeep()}
 function vibrate(ms){
   if(!vibOn)return;
   try{navigator.vibrate(ms)}catch(e){}
+}
+
+function applySoundSliders(){
+  ['dist','horn','screech','garage','victoire','beep','discard'].forEach(k=>{
+    const el=document.getElementById('snd-'+k+'-vol');
+    if(el){snd[k].vol=parseFloat(el.value);saveCfg()}
+  });
+  // graves/aigus spécifiques
+  [['dist-grave','dist','grave'],['dist-aigu','dist','aigu'],['dist-dur','dist','dur'],
+   ['horn-grave','horn','grave'],['horn-aigu','horn','aigu'],['horn-dur','horn','dur'],
+   ['screech-freq','screech','freq'],['screech-dur','screech','dur'],
+   ['garage-grave','garage','grave'],['garage-aigu','garage','aigu'],['garage-dur','garage','dur'],
+   ['victoire-grave','victoire','grave'],['victoire-aigu','victoire','aigu'],['victoire-dur','victoire','dur'],
+   ['beep-grave','beep','grave'],['beep-aigu','beep','aigu'],['beep-dur','beep','dur'],
+   ['discard-grave','discard','grave'],['discard-aigu','discard','aigu'],['discard-dur','discard','dur']
+  ].forEach(([id,cat,key])=>{
+    const el=document.getElementById('snd-'+id);
+    if(el){snd[cat][key]=parseFloat(el.value);saveCfg()}
+  });
+}
+function initSoundSliders(){
+  ['dist','horn','screech','garage','victoire','beep','discard'].forEach(k=>{
+    const el=document.getElementById('snd-'+k+'-vol');
+    if(el){el.value=snd[k].vol;el.nextElementSibling.textContent=Math.round(snd[k].vol*100)+'%'}
+  });
+  [['dist-grave','dist','grave',60,200],['dist-aigu','dist','aigu',80,400],['dist-dur','dist','dur',0.1,0.8],
+   ['horn-grave','horn','grave',200,600],['horn-aigu','horn','aigu',300,800],['horn-dur','horn','dur',0.1,0.6],
+   ['screech-freq','screech','freq',1000,8000],['screech-dur','screech','dur',0.1,0.6],
+   ['garage-grave','garage','grave',300,1200],['garage-aigu','garage','aigu',50,400],['garage-dur','garage','dur',0.05,0.4],
+   ['victoire-grave','victoire','grave',200,600],['victoire-aigu','victoire','aigu',500,1200],['victoire-dur','victoire','dur',0.05,0.3],
+   ['beep-grave','beep','grave',300,800],['beep-aigu','beep','aigu',500,1000],['beep-dur','beep','dur',0.03,0.2],
+   ['discard-grave','discard','grave',500,2000],['discard-aigu','discard','aigu',100,600],['discard-dur','discard','dur',0.03,0.2]
+  ].forEach(([id,cat,key])=>{
+    const el=document.getElementById('snd-'+id);
+    if(el){el.value=snd[cat][key];el.nextElementSibling.textContent=snd[cat][key]}
+  });
 }
 
 // ===================== WEBSOCKET =====================
@@ -608,6 +717,7 @@ function showRoundEnd(m){
 }
 
 function showAudioSettings(){
+  initSoundSliders();
   document.getElementById('audio-settings').style.display='flex';
 }
 
@@ -630,8 +740,15 @@ document.getElementById('settings-close').addEventListener('click',()=>{
   document.getElementById('settings-overlay').style.display='none';
 });
 
+function toggleSndCat(el){
+  const p=document.getElementById('snd-'+el.dataset.cat);
+  if(p)p.classList.toggle('open');
+}
 document.getElementById('audio-close').addEventListener('click',()=>{
   document.getElementById('audio-settings').style.display='none';
+});
+document.getElementById('audio-settings').addEventListener('click',function(e){
+  if(e.target===this){this.style.display='none'}
 });
 
 ['toggle-sound','toggle-vibrate'].forEach(id=>{
@@ -660,6 +777,7 @@ document.getElementById('join-btn').addEventListener('click',()=>{
 document.getElementById('name').value=gn();
 document.getElementById('jcode').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('join-btn').click()});
 document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('create-btn').click()});
+initSoundSliders();
 
 document.getElementById('start-btn').addEventListener('click',()=>{
   if(ws)ws.send(JSON.stringify({type:'start_game'}));
