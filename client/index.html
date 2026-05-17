@@ -376,8 +376,11 @@ const errEl=document.getElementById('err');
 // Sons de voiture générés via Web Audio API
 // Personnalisables dans le menu 🔊 Préférences > Sons personnalisés
 let audioCtx=null,sfxOn=localStorage.getItem('sfx')!=='off',vibOn=localStorage.getItem('vib')!=='off';
-function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
 
+function initAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume()}}
+function getCtx(){if(!audioCtx)initAudio();return audioCtx}
+document.addEventListener('click',initAudio,{once:true});
+document.addEventListener('touchstart',initAudio,{once:true});
 function defCfg(v){return JSON.parse(localStorage.getItem('sndCfg')||'null')||v}
 function saveCfg(){localStorage.setItem('sndCfg',JSON.stringify(snd))}
 
