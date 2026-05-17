@@ -350,7 +350,7 @@ const CARD_NAMES = {
 };
 const HI = {accident:'💥',flat_tire:'🔧',out_of_gas:'⛽',speed_limit:'🚦',stop:'🔴'};
 const SI = {driving_ace:'🏆',puncture_proof:'🛡️',fuel_tank:'🛢️',emergency_vehicle:'🚨'};
-const RI = {repair:'🔩',spare_tire:'🔴',gasoline:'⛽',end_speed:'✅',go:'🟢'};
+const RI = {repair:'🔩',spare_tire:'🛞',gasoline:'⛽',end_speed:'✅',go:'🟢'};
 
 let ws=null,pId='',myName='',myRoom='',isHost=false;
 let gs=null,selCard=null,prevLastMove=null;
@@ -360,7 +360,7 @@ const toast = m=>{const t=document.getElementById('toast');t.textContent=m;t.sty
 const gn = ()=>['Alexis','Camille','Jordan','Morgan','Louise','Hugo','Emma','Lucas','Léa','Nathan','Tom','Jade'][Math.floor(Math.random()*12)]+Math.floor(Math.random()*100);
 const shuffle = a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const dn = c=>{if(c.t==='dist')return c.v+'km';const n=CARD_NAMES[c.t];return n&&n[c.s]?n[c.s]:'?'};
-const ci = c=>{if(c.t==='dist')return'🛣️';if(c.t==='haz')return HI[c.s]||'⚠️';if(c.t==='rem')return RI[c.s]||'🔧';return SI[c.s]||'🛡️'};
+const ci = c=>{if(c.t==='dist')return'🛣️';if(c.t==='haz')return HI[c.s]||'⚠️';if(c.t==='rem')return c.s==='spare_tire'?'<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-.15em;fill:none;stroke:currentColor;stroke-width:2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><line x1="12" y1="4" x2="12" y2="7"/><line x1="12" y1="20" x2="12" y2="17"/><line x1="4" y1="12" x2="7" y2="12"/><line x1="20" y1="12" x2="17" y2="12"/></svg>':RI[c.s]||'🔧';return SI[c.s]||'🛡️'};
 const cc = c=>{if(c.t==='dist')return'dist';if(c.t==='haz')return'haz';if(c.t==='rem')return'rem';return'safe'};
 const hm = (s,safe)=>(s==='accident'&&safe==='driving_ace')||(s==='flat_tire'&&safe==='puncture_proof')||(s==='out_of_gas'&&safe==='fuel_tank')||(s==='speed_limit'&&safe==='emergency_vehicle')||(s==='stop'&&safe==='emergency_vehicle');
 
