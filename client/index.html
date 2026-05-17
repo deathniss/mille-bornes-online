@@ -897,11 +897,11 @@ function renderG(){
       stTxt=HI[p.battlePile]+' '+hN;
     }else if(p.speedPile){stCl='sl';stTxt='🚦Ralenti';}
     else if(!p.battlePile&&!p.speedPile&&p.distance>0){stCl='sf';stTxt='🟢';}
-    if((p.safeties||[]).length>0){stCl='sp';stTxt='🛡️B';}
     if(p.isConnected===false){stCl='sr';stTxt='📴';}
     const cn=`st-tile${isCur?' cur':''}${isMe?' me':''}`;
     const av=(p.name||'?')[0].toUpperCase();
-    ht+=`<div class="${cn}"><div class="av">${av}</div><div class="inf"><span class="nm">${p.name}${isMe?' <span class="me-tag">(toi)</span>':''}</span><span class="bot"><span class="badge ${stCl}">${stTxt}</span></span></span></div><div class="dist">${p.distance||0}<small>km</small></div><div class="sc">${cs[p.id]||0}</div></div>`;
+    const safeTags=(p.safeties||[]).map(s=>`<span class="badge sp">${SI[s]||'🛡️'}</span>`).join('');
+    ht+=`<div class="${cn}"><div class="av">${av}</div><div class="inf"><span class="nm">${p.name}${isMe?' <span class="me-tag">(toi)</span>':''}</span><span class="bot"><span class="badge ${stCl}">${stTxt}</span>${safeTags}</span></span></div><div class="dist">${p.distance||0}<small>km</small></div><div class="sc">${cs[p.id]||0}</div></div>`;
   }
   ht+=`</div>`;
   table.innerHTML=ht;
