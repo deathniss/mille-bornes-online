@@ -59,7 +59,7 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 .st-status .s.sp{background:#F39C12;color:#000}
 .st-status .s.sr{background:#444;color:#999}
 .st-cards{text-align:center;color:#F39C12;font-size:11px;font-weight:700}
-.board{flex:1;display:flex;flex-direction:column;padding:6px 10px;overflow:hidden}
+.board{flex:1;display:flex;flex-direction:column;padding:6px 10px;overflow-y:auto;max-height:calc(100vh - 275px)}
 .pinfo{background:rgba(0,0,0,0.3);border-radius:12px;padding:10px 14px;flex-shrink:0;border:1px solid rgba(255,255,255,0.1)}
 .pit{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .pinm{font-weight:700;font-size:15px}
@@ -71,10 +71,10 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 .pis .ts{background:#F39C12;color:#000}
 .pis .tsp{background:#E67E22}
 .lmove{text-align:center;padding:4px;color:#ccc;font-size:12px;min-height:22px;font-style:italic;flex-shrink:0;animation:fadeIn .3s ease}
-.handarea{background:rgba(0,0,0,0.3);border-radius:12px 12px 0 0;padding:5px 4px;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.1)}
-.hand{display:flex;gap:5px;overflow-x:auto;padding:4px;min-height:72px;align-items:center}
+.handarea{background:rgba(0,0,0,0.3);border-radius:12px 12px 0 0;padding:6px 4px;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.1)}
+.hand{display:flex;flex-wrap:wrap;gap:4px;padding:4px;min-height:72px;max-height:195px;overflow-y:auto;justify-content:center;align-items:center;align-content:center}
 .handempty{text-align:center;padding:12px;color:#666;font-size:12px;width:100%}
-.card{flex-shrink:0;width:62px;height:84px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid rgba(0,0,0,0.2);padding:3px;user-select:none;animation:cardDeal .3s ease;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.card{flex-shrink:0;width:72px;height:92px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid rgba(0,0,0,0.2);padding:3px;user-select:none;animation:cardDeal .3s ease;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
 .card:hover{transform:translateY(-10px);box-shadow:0 10px 25px rgba(0,0,0,0.4)}
 .card:active{transform:scale(0.92)}
 .card.sel{border-color:#fff;box-shadow:0 0 20px rgba(255,255,255,0.3);transform:translateY(-12px)}
@@ -145,11 +145,13 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 @keyframes attackPulse{0%{opacity:0;transform:scale(0.3)}20%{opacity:1;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.3)}}
 @keyframes afBounce{0%{transform:scale(0) rotate(-20deg)}50%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
 @media(min-width:600px){
-  .card{width:72px;height:94px}.card .ci{font-size:24px}.card .cn{font-size:9px}.card .cv{font-size:18px}
+  .card{width:80px;height:100px}.card .ci{font-size:26px}.card .cn{font-size:10px}.card .cv{font-size:20px}
+  .hand{max-height:215px;gap:5px}
   .st-row{grid-template-columns:1fr 80px 120px 50px;font-size:12px}
 }
 @media(max-width:380px){
-  .card{width:54px;height:74px}.card .ci{font-size:17px}.card .cn{font-size:7px}.card .cv{font-size:14px}
+  .card{width:64px;height:84px}.card .ci{font-size:20px}.card .cn{font-size:8px}.card .cv{font-size:16px}
+  .hand{max-height:180px}
   .room-code{font-size:28px;letter-spacing:5px}
   .st-row{grid-template-columns:1fr 50px 60px 40px;font-size:10px}
 }
