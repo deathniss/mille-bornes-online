@@ -389,7 +389,12 @@ let audioCtx=null,sfxOn=localStorage.getItem('sfx')!=='off',vibOn=localStorage.g
 
 function initAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
 function getCtx(){if(!audioCtx)initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
-['click','touchstart'].forEach(function(e){document.addEventListener(e,initAudio,{once:true})});
+['click','touchstart','touchend','pointerdown'].forEach(function(e){document.addEventListener(e,initAudio,{once:true})});
+// Capacitor : forcer l'audio au premier clic sur n'importe quel bouton
+document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){
+  var tap=function(){initAudio();['click','touchstart','touchend','pointerdown'].forEach(function(e){document.removeEventListener(e,tap)})};
+  ['click','touchstart','touchend','pointerdown'].forEach(function(e){document.addEventListener(e,tap,{once:true})});
+},100)});
 function defCfg(v){return JSON.parse(localStorage.getItem('sndCfg')||'null')||v}
 function saveCfg(){localStorage.setItem('sndCfg',JSON.stringify(snd))}
 
@@ -511,8 +516,9 @@ function playDiscardSound(){
 }
 function playCustomOrSynth(type,sub){
   const key=type+'_'+(sub||'');
-  if(cardAudios[key]&&cardAudios[key].data){
-    try{const a=new Audio(cardAudios[key].data);a.volume=0.5;a.play().catch(()=>{});return}catch(e){}
+  const ca=cardAudios[key];
+  if(ca&&ca.data){
+    try{const a=new Audio(ca.data);a.volume=0.5;a.play().then(()=>{return}).catch(()=>{});}catch(e){}
   }
   const s=sndMap[type]||'dist';
   if(s==='dist')playEngineRev();
