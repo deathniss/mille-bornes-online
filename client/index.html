@@ -271,6 +271,11 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
         </div>
       </div>
     </div>
+    <div class="ab" style="padding:6px 0">
+      <button class="btn-gold" style="font-size:11px;padding:6px" onclick="exportCardAudios()">💾 Exporter les sons (JSON)</button>
+      <button class="btn-outline" style="font-size:11px;padding:6px" onclick="document.getElementById('snd-import').click()">📂 Importer sons</button>
+      <input type="file" accept=".json" id="snd-import" style="display:none" onchange="importCardAudios(this)">
+    </div>
     <div class="ab">
       <button class="cancel" id="audio-close">Fermer</button>
     </div>
@@ -741,6 +746,37 @@ function connect(){
       S('lobby');
     }
   };
+}
+
+function exportCardAudios(){
+  const data = JSON.parse(localStorage.getItem('cardAudios')||'{}');
+  // On vérifie si y'a des données
+  const count = Object.keys(data).length;
+  if(count===0){alert('Aucun son personnalisé à exporter.');return}
+  const blob = new Blob([JSON.stringify(data)],{type:'application/json'});
+  const a = document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download = 'daboussi-city-sounds.json';a.click();
+  URL.revokeObjectURL(a.href);
+  alert(count+' sons exportés ! Tu peux maintenant importer ce fichier dans l\'APK ou le partager.');
+}
+function importCardAudios(inp){
+  if(!inp.files||!inp.files[0])return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const imported=JSON.parse(e.target.result);
+      const keys=Object.keys(imported).filter(k=>imported[k]&&imported[k].data);
+      if(keys.length===0){alert('Fichier invalide : aucune donnée audio trouvée.');return}
+      const cur=JSON.parse(localStorage.getItem('cardAudios')||'{}');
+      // Fusion : les importés écrasent les existants
+      keys.forEach(k=>{cur[k]=imported[k]});
+      localStorage.setItem('cardAudios',JSON.stringify(cur));
+      Object.keys(cardAudios).forEach(k=>delete cardAudios[k]);Object.assign(cardAudios,cur);
+      initCardSndList();
+      alert(keys.length+' sons importés avec succès !');
+    }catch(err){alert('Erreur fichier JSON : '+err.message)}
+  };
+  reader.readAsText(inp.files[0]);
 }
 
 function handle(m){
