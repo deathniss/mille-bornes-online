@@ -716,8 +716,12 @@ function connect(){
     } else {
       const isSecure = location.protocol === 'https:' || location.protocol === 'file:';
       const proto = isSecure ? 'wss:' : 'ws:';
+      // Si Live Server (port != 3000), on force localhost:3000
       const host = location.host || 'localhost:3000';
-      url = proto + '//' + host;
+      const hostParts = host.split(':');
+      const port = hostParts.length > 1 ? parseInt(hostParts[1]) : (isSecure ? 443 : 80);
+      const finalHost = (port !== 3000 && port !== 443 && !isNaN(port)) ? (hostParts[0] + ':3000') : host;
+      url = proto + '//' + finalHost;
     }
   } else {
     const isSecure = url.includes('render.com') || url.includes('heroku');
