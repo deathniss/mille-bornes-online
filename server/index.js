@@ -30,6 +30,13 @@ function shuffle(arr) {
   return arr;
 }
 
+function reshuffleDeck(room) {
+  if (room.deck.length > 0) return;
+  if (room.discard.length === 0) return;
+  room.deck = shuffle(room.discard);
+  room.discard = [];
+}
+
 function createDeck() {
   const d = [];
   for (let i = 0; i < 4; i++) d.push({ t: 'dist', v: 25 });
@@ -75,6 +82,12 @@ function cardIcon(c) {
 }
 
 function createGame(room) {
+  if (!room.targetScore) room.targetScore = 5000;
+  if (!room.cumulativeScores) {
+    room.cumulativeScores = {};
+    for (const pl of room.players) room.cumulativeScores[pl.id] = 0;
+  }
+  room.roundNumber = (room.roundNumber || 0) + 1;
   const deck = createDeck();
   const p = room.players;
   for (const pl of p) {
@@ -97,6 +110,13 @@ function createGame(room) {
   room.winner = null;
   room.turnCount = 0;
   return room;
+}
+
+function startNewRound(room) {
+  createGame(room);
+  // Auto-draw for first player
+  if (room.deck.length > 0) room.players[room.currentPlayer].hand.push(room.deck.pop());
+  room.players[room.currentPlayer].hasDrawn = true;
 }
 
 function hazardMatch(hazard, safety) {
@@ -129,8 +149,12 @@ function canPlayCard(player, card, room, target) {
   if (card.t === 'haz') {
     if (player.battlePile) return 'Tu es bloqué, joue d\'abord une défense ou Feu Vert !';
     if (!target || target.id === player.id) return 'Cible invalide';
-    if (card.s === 'speed_limit' && target.speedPile) return 'Déjà limité';
-    if (card.s !== 'speed_limit' && target.battlePile) return 'Cible non démarée ou déjà attaquée !';
+    if (card.s === 'speed_limit') {
+      if (target.battlePile) return 'Cible déjà attaquée par autre chose !';
+      if (target.speedPile) return 'Déjà limité';
+    } else {
+      if (target.battlePile) return 'Cible non démarée ou déjà attaquée !';
+    }
     if (target.safeties.some(s => hazardMatch(card.s, s))) return 'Protégé par une botte';
     return null;
   }
@@ -202,19 +226,20 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
     room.lastMove = { player: player.name, action: `joue la botte ${cardName(card)} !` };
   }
 
-  // Check win
+  // Check win (round: first to 1000)
   if (player.distance >= 1000) {
-    room.winner = player.id;
-    room.phase = 'finished';
-    return { winner: player.id };
-  }
-
-  // Check deck empty
-  if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0)) {
-    const winner = [...room.players].sort((a, b) => b.distance - a.distance)[0];
-    room.winner = winner.id;
-    room.phase = 'finished';
-    return { winner: winner.id, deckEmpty: true };
+    room.cumulativeScores[player.id] = (room.cumulativeScores[player.id] || 0) + player.distance;
+    const total = room.cumulativeScores[player.id];
+    if (total >= room.targetScore) {
+      // Match is over
+      room.winner = player.id;
+      room.phase = 'finished';
+      return { winner: player.id, totalScore: total, targetScore: room.targetScore };
+    }
+    // Start a new round
+    const winnerName = player.name;
+    startNewRound(room);
+    return { roundWin: true, winnerName, winnerId: player.id, roundScores: { ...room.cumulativeScores } };
   }
 
   // Advance to next turn (auto-draw included)
@@ -228,6 +253,7 @@ function drawForPlayer(room, playerId) {
   if (room.players[room.currentPlayer].id !== playerId) return { error: "Ce n'est pas ton tour" };
   if (player.hasDrawn) return { error: 'Déjà pioché' };
 
+  reshuffleDeck(room);
   if (room.deck.length > 0) {
     player.hand.push(room.deck.pop());
   }
@@ -243,6 +269,7 @@ function advanceTurn(room) {
   for (const p of room.players) p.hasDrawn = false;
   // Auto-draw for the next player
   const next = room.players[room.currentPlayer];
+  reshuffleDeck(room);
   if (room.deck.length > 0) next.hand.push(room.deck.pop());
   next.hasDrawn = true;
 }
@@ -274,7 +301,10 @@ function playerState(room, forPlayerId) {
     deckCount: room.deck.length,
     lastMove: room.lastMove,
     winner: room.winner,
-    turnCount: room.turnCount
+    turnCount: room.turnCount,
+    targetScore: room.targetScore,
+    cumulativeScores: room.cumulativeScores,
+    roundNumber: room.roundNumber
   };
 }
 
@@ -304,7 +334,8 @@ wss.on('connection', (ws) => {
         code,
         players: [player],
         phase: 'waiting',
-        hostId: playerId
+        hostId: playerId,
+        targetScore: msg.targetScore || 5000
       };
       rooms.set(code, room);
       currentRoom = code;
@@ -380,7 +411,15 @@ wss.on('connection', (ws) => {
       if (result.winner) {
         for (const p of room.players) {
           if (p.ws && p.ws.readyState === 1) {
-            p.ws.send(JSON.stringify({ type: 'game_over', state: playerState(room, p.id), winner: result.winner }));
+            p.ws.send(JSON.stringify({ type: 'game_over', state: playerState(room, p.id), winner: result.winner, targetScore: result.targetScore }));
+          }
+        }
+        return;
+      }
+      if (result.roundWin) {
+        for (const p of room.players) {
+          if (p.ws && p.ws.readyState === 1) {
+            p.ws.send(JSON.stringify({ type: 'round_end', state: playerState(room, p.id), winnerName: result.winnerName, winnerId: result.winnerId, roundScores: result.roundScores, targetScore: room.targetScore }));
           }
         }
         return;

@@ -13,6 +13,8 @@ body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background
 @keyframes glow{0%,100%{box-shadow:0 0 5px rgba(74,144,217,0.3)}50%{box-shadow:0 0 20px rgba(74,144,217,0.6)}}
 @keyframes cardDeal{from{opacity:0;transform:translateY(-30px) rotate(-5deg)}to{opacity:1;transform:translateY(0) rotate(0)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes cardPlay{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes turnFlash{0%,100%{opacity:1}50%{opacity:0.3}}
 button{cursor:pointer;border:none;font-family:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:10px 20px;transition:all .25s cubic-bezier(.4,0,.2,1)}
 button:active{transform:scale(0.93)}
 button:hover{filter:brightness(1.1)}
@@ -135,9 +137,24 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
     <p class="subtitle">2 à 8 joueurs • Jeu de cartes multijoueur</p>
     <input id="name" placeholder="Ton pseudo" maxlength="16" style="margin-bottom:12px">
     <button class="btn-primary" id="create-btn" style="width:100%;padding:14px">🏁 Créer une partie</button>
+    <button class="btn-gold" id="settings-btn" style="width:100%;padding:12px;margin-top:6px;font-size:13px">⚙️ Paramètres (5000 pts)</button>
     <div class="or">— ou —</div>
     <input id="jcode" placeholder="Code de la partie" maxlength="4" style="text-transform:uppercase;text-align:center;font-weight:700;letter-spacing:4px;margin-bottom:8px">
     <button class="btn-success" id="join-btn" style="width:100%;padding:14px">🚀 Rejoindre</button>
+  </div>
+</div>
+
+<div id="settings-overlay" class="cam" style="display:none">
+  <div class="c">
+    <div class="ci">⚙️</div>
+    <div class="cn">Paramètres de la partie</div>
+    <div class="ct">Objectif de score (cumul sur plusieurs manches)</div>
+    <div class="ab">
+      <button class="play" data-score="3000">3 000 pts</button>
+      <button class="play" data-score="5000">5 000 pts</button>
+      <button class="play" data-score="7000">7 000 pts</button>
+      <button class="cancel" id="settings-close">Fermer</button>
+    </div>
   </div>
 </div>
 
@@ -148,6 +165,7 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
   <span class="room-code-hint" id="copyhint">📋 Copier</span>
   <div class="player-list" id="wlist"></div>
   <p class="waiting-info" id="winfo">En attente...</p>
+  <p class="waiting-info" id="winfo2" style="color:#F39C12;font-size:12px"></p>
   <div class="waiting-actions">
     <button class="btn-primary" id="start-btn" disabled>🏁 Lancer</button>
     <button class="btn-outline" id="leave-btn">Quitter</button>
@@ -157,9 +175,9 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
 <div id="game" class="screen">
     <div class="game-container">
       <div class="game-top">
-        <span>🚗 Mille Bornes</span>
+        <span onclick="showScorePopup()" style="cursor:pointer;font-size:12px">🚗 <span id="round-info">Manche 1</span></span>
         <span class="turn" id="turn">En attente...</span>
-        <span id="status-badge" style="font-size:10px;color:#888"></span>
+        <span id="status-badge" style="font-size:10px;color:#888;cursor:pointer" onclick="showScorePopup()">⚙️</span>
       </div>
       <div class="status-table" id="status-table"></div>
       <div class="board">
@@ -188,7 +206,7 @@ h1{font-size:28px;margin-bottom:5px;text-align:center}
     <h1>Partie terminée !</h1>
     <div class="wname" id="wname">Vainqueur</div>
     <div class="fscores" id="fscores"></div>
-    <button class="btn-primary" id="replay-btn" style="margin-top:10px;padding:14px 40px">🔄 Revenir au salon</button>
+    <button class="btn-primary" id="replay-btn" style="margin-top:10px;padding:14px 40px">🔄 Suite</button>
   </div>
 </div>
 
@@ -203,6 +221,8 @@ const CARD_NAMES = {
 };
 const HI = {accident:'💥',flat_tire:'🔧',out_of_gas:'⛽',speed_limit:'🚦',stop:'🔴'};
 const SI = {driving_ace:'🏆',puncture_proof:'🛡️',fuel_tank:'🛢️',emergency_vehicle:'🚨'};
+const DI = {25:'25',50:'50',75:'75',100:'100',200:'200'};
+const RI = {repair:'🔩',spare_tire:'🛞',gasoline:'⛽',end_speed:'✅',go:'🟢'};
 
 let ws=null,pId='',myName='',myRoom='',isHost=false;
 let gs=null;
@@ -212,7 +232,7 @@ const gn = ()=>['Alexis','Camille','Jordan','Morgan','Louise','Hugo','Emma','Luc
 const gc = ()=>{let c='';for(let i=0;i<4;i++)c+=String.fromCharCode(65+Math.floor(Math.random()*26));return c};
 const shuffle = a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const dn = c=>{if(c.t==='dist')return c.v+'km';const n=CARD_NAMES[c.t];return n&&n[c.s]?n[c.s]:'?'};
-const ci = c=>{if(c.t==='dist')return'🛣️';if(c.t==='haz')return HI[c.s]||'⚠️';if(c.t==='rem')return{repair:'🔩',spare_tire:'🛞',gasoline:'⛽',end_speed:'✅',go:'🟢'}[c.s]||'🔧';return SI[c.s]||'🛡️'};
+const ci = c=>{if(c.t==='dist')return'🛣️';if(c.t==='haz')return HI[c.s]||'⚠️';if(c.t==='rem')return RI[c.s]||'🔧';return SI[c.s]||'🛡️'};
 const cc = c=>{if(c.t==='dist')return'dist';if(c.t==='haz')return'haz';if(c.t==='rem')return'rem';return'safe'};
 const hm = (s,safe)=>(s==='accident'&&safe==='driving_ace')||(s==='flat_tire'&&safe==='puncture_proof')||(s==='out_of_gas'&&safe==='fuel_tank')||(s==='speed_limit'&&safe==='emergency_vehicle')||(s==='stop'&&safe==='emergency_vehicle');
 
@@ -262,6 +282,7 @@ function handle(m){
     case 'game_start': gs=m.state; selCard=null; S('game'); renderG(); break;
     case 'game_update': gs=m.state; renderG(); break;
     case 'game_over': gs=m.state; showR(m.winner); break;
+    case 'round_end': gs=m.state; showRoundEnd(m); break;
     case 'error': E(m.message); break;
     case 'player_disconnected': if(gs&&gs.players)gs.players.forEach(p=>{if(p.id===m.playerId)p.isConnected=false}); renderG(); break;
   }
@@ -274,6 +295,7 @@ function renderW(players){
   document.getElementById('start-btn').style.display=isHost?'inline':'none';
   document.getElementById('start-btn').disabled=true;
   document.getElementById('start-btn').textContent='🏁 En attente...';
+  document.getElementById('winfo2').textContent=`Objectif: ${selectedScore} pts cumulés`;
   if(players){
     list.innerHTML=players.map(p=>`<div class="player-item"><div class="av">${(p.name||'?')[0].toUpperCase()}</div><span class="nm">${p.name}</span>${p.isHost?'<span class="hb">HÔTE</span>':''}</div>`).join('');
     const c=players.length;
@@ -295,9 +317,11 @@ function renderG(){
     if(cur&&cur.id===pId){ti.textContent='🎯 À TON TOUR';ti.className='turn';}
     else{ti.textContent='⏳ Tour de '+(cur?cur.name:'?');ti.className='turn wait';}
   }
-  document.getElementById('status-badge').textContent=isHost?'👑 Hôte':'';
+  document.getElementById('status-badge').textContent='⚙️';
+  document.getElementById('round-info').textContent=`Manche ${gs.roundNumber||1} / ${gs.targetScore||5000}pts`;
   const table=document.getElementById('status-table');
-  let ht=`<div class="st-row header"><span>Joueur</span><span style="text-align:right">Distance</span><span style="text-align:center">Statut</span><span style="text-align:center">Cartes</span></div>`;
+  const cs=gs.cumulativeScores||{};
+  let ht=`<div class="st-row header"><span>Joueur</span><span style="text-align:right">Distance</span><span style="text-align:center">Statut</span><span style="text-align:center">Total</span></div>`;
   for(const p of gs.players){
     const isMe=p.id===pId,isCur=gs.players[gs.currentPlayer]&&gs.players[gs.currentPlayer].id===p.id;
     let stCl='sr',stTxt='✓';
@@ -307,7 +331,7 @@ function renderG(){
     if((p.safeties||[]).length>0){stCl='sp';stTxt='🛡️';}
     if(p.isConnected===false){stCl='sr';stTxt='📴';}
     const cn=`st-row${isCur?' cur':''}${isMe?' me':''}`;
-    ht+=`<div class="${cn}"><span class="st-name">${p.name}${isMe?' (toi)':''}</span><span class="st-dist">${p.distance||0}</span><span class="st-status"><span class="s ${stCl}">${stTxt}</span></span><span class="st-cards">${p.handSize||0}</span></div>`;
+    ht+=`<div class="${cn}"><span class="st-name">${p.name}${isMe?' (toi)':''}</span><span class="st-dist">${p.distance||0}</span><span class="st-status"><span class="s ${stCl}">${stTxt}</span></span><span class="st-cards">${cs[p.id]||0}</span></div>`;
   }
   table.innerHTML=ht;
 
@@ -426,11 +450,55 @@ function showR(wid){
   document.getElementById('fscores').innerHTML=sorted.map((p,i)=>`<div class="r"><span class="pos">#${i+1}</span><span>${p.name}</span><span>${p.distance||0} km</span></div>`).join('');
 }
 
+function showScorePopup(){
+  if(!gs)return;
+  const d=document.createElement('div');d.className='cam';
+  let rows='';
+  const cs=gs.cumulativeScores||{};
+  for(const p of gs.players){
+    rows+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.1)"><span>${p.name}</span><span style="color:#F39C12;font-weight:700">${cs[p.id]||0} / ${gs.targetScore||5000}</span></div>`;
+  }
+  d.innerHTML=`<div class="c"><div class="ci">🏆</div><div class="cn">Scores cumulatifs</div><div class="ct">Manche ${gs.roundNumber||1} • Objectif: ${gs.targetScore||5000} pts</div><div style="width:100%;text-align:left;padding:8px 0">${rows}</div><button class="cancel" onclick="this.parentElement.parentElement.remove()">Fermer</button></div>`;
+  document.body.appendChild(d);
+}
+
+function showRoundEnd(m){
+  S('results');
+  document.getElementById('wname').innerHTML=`🏁 Manche ${gs.roundNumber||1} terminée ! <span style="font-size:16px;color:#2ECC71">${m.winnerName} gagne cette manche</span>`;
+  if(m.roundScores){
+    const entries=Object.entries(m.roundScores).sort((a,b)=>b[1]-a[1]);
+    const cs=gs.cumulativeScores||{};
+    document.getElementById('fscores').innerHTML=entries.map(([id,score])=>{
+      const p=gs.players.find(p=>p.id===id);
+      return `<div class="r"><span class="pos">${score} pts</span><span>${p?p.name:'?'}</span><span>Total: ${cs[id]||0}</span></div>`;
+    }).join('');
+  }
+  document.getElementById('replay-btn').textContent='▶ Manche suivante';
+}
+
 // ===================== EVENTS =====================
+let selectedScore = 5000;
+
+document.getElementById('settings-btn').addEventListener('click',()=>{
+  document.getElementById('settings-overlay').style.display='flex';
+});
+
+document.getElementById('settings-overlay').querySelectorAll('.play').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    selectedScore = parseInt(btn.dataset.score);
+    document.getElementById('settings-btn').textContent=`⚙️ Paramètres (${selectedScore} pts)`;
+    document.getElementById('settings-overlay').style.display='none';
+  });
+});
+
+document.getElementById('settings-close').addEventListener('click',()=>{
+  document.getElementById('settings-overlay').style.display='none';
+});
+
 document.getElementById('create-btn').addEventListener('click',()=>{
   myName=document.getElementById('name').value.trim()||'Joueur';
   if(!ws||ws.readyState!==1){E('Connexion...');return;}
-  ws.send(JSON.stringify({type:'create_room',playerName:myName, maxPlayers: MAX_PLAYERS}));
+  ws.send(JSON.stringify({type:'create_room',playerName:myName, maxPlayers: MAX_PLAYERS, targetScore: selectedScore}));
 });
 
 document.getElementById('join-btn').addEventListener('click',()=>{
@@ -460,7 +528,10 @@ document.getElementById('endb').addEventListener('click',()=>{
   if(ws)ws.send(JSON.stringify({type:'end_turn'}));
 });
 
-document.getElementById('replay-btn').addEventListener('click',()=>{S('waiting')});
+document.getElementById('replay-btn').addEventListener('click',()=>{
+  if(gs&&gs.phase==='playing'){S('game');renderG();return;}
+  S('waiting')
+});
 
 connect();
 </script>
