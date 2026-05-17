@@ -64,9 +64,9 @@ function createDeck() {
 function cardName(c) {
   const names = {
     dist: c.v + ' km',
-    haz: { accident: 'Carambolage', flat_tire: 'Pneu Crevé', out_of_gas: "Plus d'Essence", speed_limit: 'Radar', stop: 'Feu Rouge' }[c.s],
-    rem: { repair: 'Dépannage', spare_tire: 'Galette', gasoline: 'Sans Plomb', end_speed: 'Fin de Zone', go: 'Feu Vert' }[c.s],
-    safe: { driving_ace: 'As du Volant', puncture_proof: 'Pneu Renforcé', fuel_tank: 'Réservoir XL', emergency_vehicle: 'Prioritaire' }[c.s]
+    haz: { accident: 'Aksida', flat_tire: 'Krivi', out_of_gas: 'Lisans', speed_limit: 'Ralenti', stop: 'Ahbes' }[c.s],
+    rem: { repair: 'Toli', spare_tire: 'Ronda', gasoline: 'Pompa', end_speed: 'Fin d limite', go: 'Kala3' }[c.s],
+    safe: { driving_ace: 'Chomakher', puncture_proof: 'Gonvizatour', fuel_tank: 'Naftal', emergency_vehicle: 'Doula' }[c.s]
   };
   return names[c.t] || '?';
 }
