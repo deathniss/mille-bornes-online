@@ -350,7 +350,7 @@ const CARD_NAMES = {
 };
 const HI = {accident:'💥',flat_tire:'🔧',out_of_gas:'⛽',speed_limit:'🚦',stop:'🔴'};
 const SI = {driving_ace:'🏆',puncture_proof:'🛡️',fuel_tank:'🛢️',emergency_vehicle:'🚨'};
-const RI = {repair:'🔩',spare_tire:'🛞',gasoline:'⛽',end_speed:'✅',go:'🟢'};
+const RI = {repair:'🔩',spare_tire:'🔴',gasoline:'⛽',end_speed:'✅',go:'🟢'};
 
 let ws=null,pId='',myName='',myRoom='',isHost=false;
 let gs=null,selCard=null,prevLastMove=null;
@@ -809,7 +809,7 @@ function handle(m){
         m.state.players.find(p=>p.id===pId)?.battlePile && 
         (!gs.players.find(p=>p.id===pId)?.battlePile || gs.players.find(p=>p.id===pId)?.battlePile !== m.state.players.find(p=>p.id===pId)?.battlePile);
       if(gs&&gs.lastMove&&(!m.state.lastMove||m.state.lastMove.action!==gs.lastMove.action)){
-        if(m.state.lastMove)playCardSound('play','any');
+        if(m.state.lastMove){const lm=m.state.lastMove;playCardSound(lm.cardType||'play',lm.cardSub)}
       }
       gs=m.state;
       if(gs&&gs.lastMove&&gs.lastMove.action&&prevLastMove!==gs.lastMove.action){prevLastMove=gs.lastMove.action;}
@@ -882,7 +882,9 @@ function renderG(){
     if((p.safeties||[]).length>0){stCl='sp';stTxt='🛡️';}
     if(p.isConnected===false){stCl='sr';stTxt='📴';}
     const cn=`st-row${isCur?' cur':''}${isMe?' me':''}`;
-    ht+=`<div class="${cn}"><span class="st-name">${p.name}${isMe?' (toi)':''}</span><span class="st-dist">${p.distance||0}</span><span class="st-status"><span class="s ${stCl}">${stTxt}</span></span><span class="st-cards">${cs[p.id]||0}</span></div>`;
+    const atkInfo=p.lastAttacked?gs.players.find(pp=>pp.id===p.lastAttacked.by)?.name||'':'';
+    const title=p.battlePile&&atkInfo?` title="${atkInfo} → ${dn({t:'haz',s:p.battlePile})}"`:p.battlePile?` title="Bloqué"`:'';
+    ht+=`<div class="${cn}"><span class="st-name">${p.name}${isMe?' (toi)':''}</span><span class="st-dist">${p.distance||0}</span><span class="st-status"><span class="s ${stCl}"${title}>${stTxt}</span></span><span class="st-cards">${cs[p.id]||0}</span></div>`;
   }
   table.innerHTML=ht;
 
@@ -890,7 +892,10 @@ function renderG(){
   document.getElementById('sdist').innerHTML=`${me.distance||0} <span>km</span>`;
   const st=document.getElementById('sstatus');
   const tags=[];
-  if(me.battlePile)tags.push(`<span class="tag th">${HI[me.battlePile]||'⚠️'} ${dn({t:'haz',s:me.battlePile})}</span>`);
+  if(me.battlePile){
+    const atkName=me.lastAttacked?gs.players.find(p=>p.id===me.lastAttacked.by)?.name||'':'';
+    tags.push(`<span class="tag th">${HI[me.battlePile]||'⚠️'} ${dn({t:'haz',s:me.battlePile})}${atkName?`<span style="font-size:9px;color:#E74C3C"> ← ${atkName}</span>`:''}</span>`);
+  }
   if(me.speedPile)tags.push(`<span class="tag tsp">🚦 Radar</span>`);
   (me.safeties||[]).forEach(s=>tags.push(`<span class="tag ts">${SI[s]||'🛡️'} ${dn({t:'safe',s:s})}</span>`));
   st.innerHTML=tags.length?tags.join(''):'<span class="tag" style="color:#666">✓ En route</span>';

@@ -199,14 +199,14 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
 
   if (card.t === 'dist') {
     player.distance += card.v;
-    room.lastMove = { player: player.name, action: `avance de ${card.v} km` };
+    room.lastMove = { player: player.name, action: `avance de ${card.v} km`, cardType: card.t, cardSub: card.v };
   } else if (card.t === 'haz') {
     if (card.s === 'speed_limit') {
       target.speedPile = 'speed_limit';
     } else {
       target.battlePile = card.s;
     }
-    room.lastMove = { player: player.name, action: `${cardName(card)} sur ${target.name}` };
+    room.lastMove = { player: player.name, action: `${cardName(card)} sur ${target.name}`, cardType: card.t, cardSub: card.s };
     target.lastAttacked = { by: playerId, hazard: card.s };
   } else if (card.t === 'rem') {
     if (card.s === 'end_speed') {
@@ -215,7 +215,7 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
       player.battlePile = null;
       player.lastAttacked = null;
     }
-    room.lastMove = { player: player.name, action: `${cardName(card)}` };
+    room.lastMove = { player: player.name, action: `${cardName(card)}`, cardType: card.t, cardSub: card.s };
   } else if (card.t === 'safe') {
     player.safeties.push(card.s);
     if (card.s === 'emergency_vehicle') { player.speedPile = null; if (player.battlePile === 'stop') player.battlePile = null; player.lastAttacked = null; }
@@ -223,7 +223,7 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
       const hazardMap = { driving_ace: 'accident', puncture_proof: 'flat_tire', fuel_tank: 'out_of_gas' };
       if (player.battlePile === hazardMap[card.s]) { player.battlePile = null; player.lastAttacked = null; }
     }
-    room.lastMove = { player: player.name, action: `joue la botte ${cardName(card)} !` };
+    room.lastMove = { player: player.name, action: `joue la botte ${cardName(card)} !`, cardType: card.t, cardSub: card.s };
   }
 
   // Check win (round: first to 1000)
