@@ -128,6 +128,16 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 .snd-pick select{flex:1;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:3px 4px;font-size:10px;outline:none}
 .snd-pick select option{background:#222;color:#fff}
 .snd-ex{font-size:10px;color:#F39C12;min-width:30px;text-align:right}
+.cs-row{display:flex;align-items:center;gap:4px;padding:3px 6px;background:rgba(0,0,0,0.15);border-radius:6px;margin:2px 0;font-size:10px}
+.cs-ic{width:18px;text-align:center;font-size:12px}
+.cs-lb{min-width:60px;color:#ddd;font-weight:500;font-size:10px}
+.cs-f{flex:1;font-size:9px;color:#aaa;max-width:80px}
+.cs-f::-webkit-file-upload-button{font-size:9px;padding:2px 6px;border-radius:4px;border:none;background:#4A90D9;color:#fff;cursor:pointer}
+.cs-nm{flex:1;font-size:9px;color:#F39C12;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70px;text-align:right}
+.cs-play,.cs-reset{background:rgba(255,255,255,0.1);border:none;border-radius:4px;cursor:pointer;font-size:10px;padding:2px 4px;line-height:1;transition:background .15s}
+.cs-play:hover{background:rgba(46,204,113,0.3)}
+.cs-reset:hover{background:rgba(231,76,60,0.3)}
+.cs-play:disabled,.cs-reset:disabled{opacity:0.3;cursor:default}
 @media(min-width:600px){
   .card{width:72px;height:94px}.card .ci{font-size:24px}.card .cn{font-size:9px}.card .cv{font-size:18px}
   .st-row{grid-template-columns:1fr 80px 120px 50px;font-size:12px}
@@ -181,14 +191,7 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
       <div class="toggle-row"><label>📳 Vibrations</label><div class="toggle on" id="toggle-vibrate"></div></div>
     </div>
     <div class="cn" style="font-size:14px;margin-top:6px">🎯 Son par carte</div>
-    <div class="ab" style="padding:4px 0;font-size:11px">
-      <div class="snd-pick"><label>🏎️ Distances</label><select onchange="sndMap['dist']=this.value;saveSndMap();updateSndExample(this)" id="sp-dist"></select><span class="snd-ex" id="sx-dist"></span></div>
-      <div class="snd-pick"><label>💥 Attaques</label><select onchange="sndMap['haz']=this.value;saveSndMap();updateSndExample(this)" id="sp-haz"></select><span class="snd-ex" id="sx-haz"></span></div>
-      <div class="snd-pick"><label>🔧 Défenses</label><select onchange="sndMap['rem']=this.value;saveSndMap();updateSndExample(this)" id="sp-rem"></select><span class="snd-ex" id="sx-rem"></span></div>
-      <div class="snd-pick"><label>🏆 Bottes</label><select onchange="sndMap['safe']=this.value;saveSndMap();updateSndExample(this)" id="sp-safe"></select><span class="snd-ex" id="sx-safe"></span></div>
-      <div class="snd-pick"><label>🔔 Tour</label><select onchange="sndMap['turn']=this.value;saveSndMap();updateSndExample(this)" id="sp-turn"></select><span class="snd-ex" id="sx-turn"></span></div>
-      <div class="snd-pick"><label>🃏 Jeter</label><select onchange="sndMap['discard']=this.value;saveSndMap();updateSndExample(this)" id="sp-discard"></select><span class="snd-ex" id="sx-discard"></span></div>
-    </div>
+    <div class="ab" style="padding:4px 0;font-size:11px" id="card-snd-list"></div>
     <div class="cn" style="font-size:14px;margin-top:6px">🎛️ Réglages des sons</div>
     <div class="ab" style="padding:4px 0;font-size:11px">
       <div class="snd-cat" data-cat="dist" onclick="toggleSndCat(this)">🏎️ Moteur (Distance)</div>
@@ -374,6 +377,9 @@ const snd = {
 ['dist','horn','screech','garage','victoire','beep','discard'].forEach(k=>{
   const c=defCfg(null);if(c&&c[k])Object.assign(snd[k],c[k])
 });
+// Fichiers audio personnalisés par carte (stored as base64 data URLs)
+const cardAudios = JSON.parse(localStorage.getItem('cardAudios')||'{}');
+function saveCardAudios(){localStorage.setItem('cardAudios',JSON.stringify(cardAudios))}
 // Mapping catégorie → son personnalisé (sauvegardé)
 const sndMap = JSON.parse(localStorage.getItem('sndMap')||'{"dist":"dist","haz":"horn","rem":"garage","safe":"victoire","turn":"beep","discard":"discard"}');
 function saveSndMap(){localStorage.setItem('sndMap',JSON.stringify(sndMap))}
@@ -467,7 +473,11 @@ function playDiscardSound(){
     o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d.dur);
   }catch(e){}
 }
-function playCardSound(type,sub){
+function playCustomOrSynth(type,sub){
+  const key=type+'_'+(sub||'');
+  if(cardAudios[key]&&cardAudios[key].data){
+    try{const a=new Audio(cardAudios[key].data);a.volume=0.5;a.play().catch(()=>{});return}catch(e){}
+  }
   const s=sndMap[type]||'dist';
   if(s==='dist')playEngineRev();
   else if(s==='horn')playHorn();
@@ -476,6 +486,9 @@ function playCardSound(type,sub){
   else if(s==='victoire')playVictory();
   else if(s==='beep')playDoubleBeep();
   else if(s==='discard')playDiscardSound();
+}
+function playCardSound(type,sub){
+  playCustomOrSynth(type,sub);
 }
 function playTurnSound(){const s=sndMap['turn']||'beep';
   if(s==='dist')playEngineRev();
@@ -623,24 +636,73 @@ function initSoundSliders(){
   });
 }
 
-const sndOpts = ['dist','horn','screech','garage','victoire','beep','discard'];
-const sndLabels = {dist:'🏎️ Moteur',horn:'📯 Klaxon',screech:'🛞 Crissement',garage:'🔧 Garage',victoire:'🏆 Victoire',beep:'🔔 Bips',discard:'🃏 Carte'};
-function updateSndExample(el){
-  const id=el.id.replace('sp-','');const ex=document.getElementById('sx-'+id);
-  if(ex)ex.textContent=sndLabels[el.value]||el.value;
+const cardIcons = {dist:'🏎️',haz:'💥',rem:'🔧',safe:'🏆'};
+const cardList = [
+  {type:'dist',sub:25,label:'25km',icon:'🏎️'},
+  {type:'dist',sub:50,label:'50km',icon:'🏎️'},
+  {type:'dist',sub:75,label:'75km',icon:'🏎️'},
+  {type:'dist',sub:100,label:'100km',icon:'🏎️'},
+  {type:'dist',sub:200,label:'200km',icon:'🏎️'},
+  {type:'haz',sub:'stop',label:'Ahbes',icon:'🔴'},
+  {type:'haz',sub:'speed_limit',label:'Ralenti',icon:'🚦'},
+  {type:'haz',sub:'out_of_gas',label:'Lisans',icon:'⛽'},
+  {type:'haz',sub:'flat_tire',label:'Krivi',icon:'🔧'},
+  {type:'haz',sub:'accident',label:'Aksida',icon:'💥'},
+  {type:'rem',sub:'go',label:'Kala3',icon:'🟢'},
+  {type:'rem',sub:'end_speed',label:'Fin d limite',icon:'✅'},
+  {type:'rem',sub:'gasoline',label:'Pompa',icon:'⛽'},
+  {type:'rem',sub:'spare_tire',label:'Ronda',icon:'🛞'},
+  {type:'rem',sub:'repair',label:'Toli',icon:'🔩'},
+  {type:'safe',sub:'driving_ace',label:'Chomakher',icon:'🏆'},
+  {type:'safe',sub:'puncture_proof',label:'Gonvizatour',icon:'🛡️'},
+  {type:'safe',sub:'fuel_tank',label:'Naftal',icon:'🛢️'},
+  {type:'safe',sub:'emergency_vehicle',label:'Doula',icon:'🚨'},
+  {type:'turn',sub:'',label:'Tour',icon:'🔔'},
+  {type:'discard',sub:'',label:'Jeter',icon:'🃏'}
+];
+function getCardKey(type,sub){return type+'_'+(sub||'')}
+function handleCardFile(type,sub){
+  const key=getCardKey(type,sub);
+  const inp=document.getElementById('cf-'+key);
+  if(!inp||!inp.files||!inp.files[0])return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    cardAudios[key]={name:inp.files[0].name,data:e.target.result};
+    saveCardAudios();
+    const lb=document.getElementById('cl-'+key);
+    if(lb)lb.textContent=inp.files[0].name;
+  };
+  reader.readAsDataURL(inp.files[0]);
 }
-function initSndPickers(){
-  ['dist','haz','rem','safe','turn','discard'].forEach(cat=>{
-    const sel=document.getElementById('sp-'+cat);
-    if(!sel)return;
-    sel.innerHTML='';
-    sndOpts.forEach(o=>{
-      const op=document.createElement('option');op.value=o;op.textContent=sndLabels[o];
-      if(o===sndMap[cat])op.selected=true;
-      sel.appendChild(op);
-    });
-    const ex=document.getElementById('sx-'+cat);
-    if(ex)ex.textContent=sndLabels[sndMap[cat]]||sndMap[cat];
+function resetCardSound(type,sub){
+  const key=getCardKey(type,sub);
+  delete cardAudios[key];
+  saveCardAudios();
+  const inp=document.getElementById('cf-'+key);if(inp)inp.value='';
+  const lb=document.getElementById('cl-'+key);if(lb)lb.textContent='Aucun';
+}
+function playCardAudio(type,sub){
+  const key=getCardKey(type,sub);
+  if(cardAudios[key]&&cardAudios[key].data){
+    try{const a=new Audio(cardAudios[key].data);a.volume=0.5;a.play().catch(()=>{})}catch(e){}
+  }
+}
+function initCardSndList(){
+  const cont=document.getElementById('card-snd-list');
+  if(!cont)return;
+  cont.innerHTML='';
+  cardList.forEach(({type,sub,label,icon})=>{
+    const key=getCardKey(type,sub);
+    const has=cardAudios[key]&&cardAudios[key].data;
+    const div=document.createElement('div');div.className='cs-row';
+    div.innerHTML=
+      '<span class="cs-ic">'+icon+'</span>'+
+      '<span class="cs-lb">'+label+'</span>'+
+      '<input type="file" accept="audio/*" id="cf-'+key+'" class="cs-f" onchange="handleCardFile(\''+type+'\',\''+sub+'\')">'+
+      '<span class="cs-nm" id="cl-'+key+'">'+(has?cardAudios[key].name:'Aucun')+'</span>'+
+      '<button class="cs-play" onclick="playCardAudio(\''+type+'\',\''+sub+'\')" '+(has?'':'disabled')+' title="Jouer">▶️</button>'+
+      '<button class="cs-reset" onclick="resetCardSound(\''+type+'\',\''+sub+'\')" '+(has?'':'disabled')+' title="Supprimer">✖</button>';
+    cont.appendChild(div);
   });
 }
 
@@ -884,8 +946,8 @@ function showRoundEnd(m){
 }
 
 function showAudioSettings(){
-initSoundSliders();initSndPickers();
-  initSndPickers();
+  initSoundSliders();
+  initCardSndList();
   document.getElementById('audio-settings').style.display='flex';
 }
 
