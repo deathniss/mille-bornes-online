@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const { WebSocketServer } = require('ws');
 const path = require('path');
 const crypto = require('crypto');
@@ -474,6 +475,7 @@ wss.on('connection', (ws) => {
       return;
     }
 
+    if (msg.type === 'ping') { ws.send(JSON.stringify({type:'pong'})); return; }
     if (msg.type === 'chat') {
       const code = clientRooms.get(ws);
       if (!code) return;
@@ -510,6 +512,19 @@ wss.on('connection', (ws) => {
     }
   });
 });
+
+// Keepalive : empêche Render de s'endormir (ping toutes les 4 min)
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL || '';
+if (RENDER_URL) {
+  setInterval(() => {
+    https.get(RENDER_URL, (res) => {
+      console.log('Keepalive ping OK');
+    }).on('error', (e) => {
+      console.log('Keepalive ping échoué:', e.message);
+    });
+  }, 4 * 60 * 1000);
+  console.log('Keepalive activé sur', RENDER_URL);
+}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
