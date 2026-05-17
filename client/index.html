@@ -45,14 +45,14 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 .game-top .turn{color:#2ECC71;font-weight:600;animation:pulse 1.5s infinite}
 .game-top .turn.wait{color:#F39C12;animation:none}
 .status-table{width:100%;padding:35px 8px 4px;flex-shrink:0}
-.st-row{display:grid;grid-template-columns:1fr 60px 70px 50px;gap:3px;padding:3px 6px;border-radius:6px;margin-bottom:2px;font-size:11px;align-items:center}
+.st-row{display:grid;grid-template-columns:1fr 50px 100px 40px;gap:2px;padding:3px 4px;border-radius:6px;margin-bottom:2px;font-size:11px;align-items:center}
 .st-row.header{color:#aaa;font-size:9px;text-transform:uppercase;letter-spacing:1px;background:rgba(0,0,0,0.2)}
 .st-row.cur{background:rgba(243,156,18,0.15);border:1px solid rgba(243,156,18,0.3)}
 .st-row.me{background:rgba(46,204,113,0.1)}
 .st-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .st-dist{font-weight:700;color:#F39C12;text-align:right}
-.st-status{text-align:center;font-size:10px}
-.st-status .s{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px}
+.st-status{text-align:center;font-size:9px}
+.st-status .s{display:inline-flex;align-items:center;gap:2px;padding:2px 4px;border-radius:4px;overflow:hidden;max-width:100%}
 .st-status .s.st{background:#C0392B}
 .st-status .s.sf{background:#27AE60}
 .st-status .s.sl{background:#E67E22}
@@ -147,13 +147,13 @@ h1{font-size:28px;margin-bottom:5px;text-align:center;text-shadow:0 2px 4px rgba
 @media(min-width:600px){
   .card{width:80px;height:100px}.card .ci{font-size:26px}.card .cn{font-size:10px}.card .cv{font-size:20px}
   .hand{max-height:215px;gap:5px}
-  .st-row{grid-template-columns:1fr 80px 120px 50px;font-size:12px}
+  .st-row{grid-template-columns:1fr 70px 140px 50px;font-size:12px}
 }
 @media(max-width:380px){
   .card{width:64px;height:84px}.card .ci{font-size:20px}.card .cn{font-size:8px}.card .cv{font-size:16px}
   .hand{max-height:180px}
   .room-code{font-size:28px;letter-spacing:5px}
-  .st-row{grid-template-columns:1fr 50px 60px 40px;font-size:10px}
+  .st-row{grid-template-columns:1fr 40px 80px 35px;font-size:9px}
 }
 </style>
 </head>
@@ -882,10 +882,10 @@ function renderG(){
   for(const p of gs.players){
     const isMe=p.id===pId,isCur=gs.players[gs.currentPlayer]&&gs.players[gs.currentPlayer].id===p.id;
     let stCl='sr',stTxt='✓';
-    if(p.battlePile){stCl='st';stTxt=HI[p.battlePile]||'⚠️';}
-    else if(p.speedPile){stCl='sl';stTxt='🚦';}
+    if(p.battlePile){stCl='st';stTxt=HI[p.battlePile]+' '+dn({t:'haz',s:p.battlePile}).slice(0,8);}
+    else if(p.speedPile){stCl='sl';stTxt='🚦 Ralenti';}
     else if(!p.battlePile&&!p.speedPile&&p.distance>0){stCl='sf';stTxt='🟢';}
-    if((p.safeties||[]).length>0){stCl='sp';stTxt='🛡️';}
+    if((p.safeties||[]).length>0){stCl='sp';stTxt=(SI[p.safeties[p.safeties.length-1]]||'🛡️')+' Botte';}
     if(p.isConnected===false){stCl='sr';stTxt='📴';}
     const cn=`st-row${isCur?' cur':''}${isMe?' me':''}`;
     const atkInfo=p.lastAttacked?gs.players.find(pp=>pp.id===p.lastAttacked.by)?.name||'':'';
@@ -1032,10 +1032,10 @@ function showRoundEnd(m){
   document.getElementById('wname').innerHTML=`<span style="font-size:28px">🏁</span><br>Manche ${gs.roundNumber||1} terminée !<br><span style="font-size:16px;color:#2ECC71">${m.winnerName} gagne cette manche</span>`;
   if(m.roundScores){
     const entries=Object.entries(m.roundScores).sort((a,b)=>b[1]-a[1]);
-    const cs=gs.cumulativeScores||{};
-    document.getElementById('fscores').innerHTML=entries.map(([id,score])=>{
+    document.getElementById('fscores').innerHTML=entries.map(([id,cumul])=>{
       const p=gs.players.find(p=>p.id===id);
-      return `<div class="r"><span class="pos">${score} pts</span><span>${p?p.name:'?'}</span><span>Total: ${cs[id]||0}</span></div>`;
+      const dist=p?p.distance:0;
+      return `<div class="r"><span class="pos">🏁 ${cumul} pts</span><span>${p?p.name:'?'}</span><span>Manche: ${dist} km</span></div>`;
     }).join('');
   }
   document.getElementById('replay-btn').textContent='▶ Manche suivante';

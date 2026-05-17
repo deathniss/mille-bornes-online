@@ -97,6 +97,7 @@ function createGame(room) {
     pl.speedPile = null;
     pl.safeties = [];
     pl.hasDrawn = false;
+    pl.lastAttacked = null;
   }
   for (let i = 0; i < 5; i++) {
     for (const pl of p) {
@@ -228,7 +229,10 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
 
   // Check win (round: first to 1000)
   if (player.distance >= 1000) {
-    room.cumulativeScores[player.id] = (room.cumulativeScores[player.id] || 0) + player.distance;
+    // All players keep their distance as round score
+    for (const pl of room.players) {
+      room.cumulativeScores[pl.id] = (room.cumulativeScores[pl.id] || 0) + pl.distance;
+    }
     const total = room.cumulativeScores[player.id];
     if (total >= room.targetScore) {
       // Match is over
