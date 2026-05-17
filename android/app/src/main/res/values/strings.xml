@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">MilleBornesOnline</string>
-    <string name="title_activity_main">MilleBornesOnline</string>
+    <string name="app_name">Daboussi City</string>
+    <string name="title_activity_main">Daboussi City</string>
     <string name="package_name">fr.millebornes.online</string>
     <string name="custom_url_scheme">fr.millebornes.online</string>
 </resources>
