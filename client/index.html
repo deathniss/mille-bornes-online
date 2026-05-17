@@ -251,27 +251,60 @@ const lobby=document.getElementById('lobby'),waiting=document.getElementById('wa
 const game=document.getElementById('game'),results=document.getElementById('results');
 const errEl=document.getElementById('err');
 
-// ===================== SOUND MANAGER =====================
+// ===================== SOUND CONFIG =====================
+// 🔧 Pour utiliser tes propres fichiers audio :
+// 1. Crée un dossier "sounds" à côté de index.html
+// 2. Mets tes .mp3/.wav dedans
+// 3. Change "file:null" en "file:'sounds/tonfichier.mp3'"
+// Ex: dist:{type:'tone',freq:523,...} ou dist:{type:'file',src:'sounds/moteur.mp3',vol:0.5}
+const SOUNDS = {
+  dist:{type:'tone',freq:523,dur:0.12,wave:'sine',vol:0.12},
+  haz:{type:'tone',freq:220,dur:0.25,wave:'sawtooth',vol:0.1},
+  rem:{type:'tone',freq:440,dur:0.2,wave:'triangle',vol:0.12},
+  safe:{type:'tone',freq:660,dur:0.1,wave:'sine',vol:0.1},
+  safe2:{type:'tone',freq:880,dur:0.15,wave:'sine',vol:0.1},
+  turn:{type:'tone',freq:440,dur:0.08,wave:'sine',vol:0.1},
+  turn2:{type:'tone',freq:554,dur:0.08,wave:'sine',vol:0.1},
+  turn3:{type:'tone',freq:660,dur:0.12,wave:'sine',vol:0.12},
+  discard:{type:'tone',freq:300,dur:0.15,wave:'triangle',vol:0.08}
+};
+
+// Cache les fichiers audio chargés
+const audioCache={};
 let audioCtx=null,sfxOn=localStorage.getItem('sfx')!=='off',vibOn=localStorage.getItem('vib')!=='off';
 function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
-function playTone(freq,dur,type='sine',vol=0.15){
-  if(!sfxOn)return;
-  try{
-    const c=getCtx(),o=c.createOscillator(),g=c.createGain();
-    o.type=type;o.frequency.value=freq;g.gain.value=vol;g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
-    o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur);
-  }catch(e){}
+
+function playSound(cfg){
+  if(!sfxOn||!cfg)return;
+  if(cfg.type==='file'&&cfg.src){
+    // Joue un fichier audio
+    try{
+      const a=new Audio(cfg.src);
+      a.volume=cfg.vol||0.5;
+      a.play().catch(()=>{});
+    }catch(e){}
+  }else if(cfg.type==='tone'){
+    // Joue un son synthétisé
+    try{
+      const c=getCtx(),o=c.createOscillator(),g=c.createGain();
+      o.type=cfg.wave||'sine';o.frequency.value=cfg.freq||440;
+      g.gain.value=cfg.vol||0.15;g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+(cfg.dur||0.2));
+      o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+(cfg.dur||0.2));
+    }catch(e){}
+  }
 }
 function playCardSound(type,sub){
-  if(!sfxOn)return;
-  if(type==='dist')playTone(523,0.12,'sine',0.12);
-  else if(type==='haz')playTone(220,0.25,'sawtooth',0.1);
-  else if(type==='rem')playTone(440,0.2,'triangle',0.12);
-  else if(type==='safe'){playTone(660,0.1,'sine',0.1);setTimeout(()=>playTone(880,0.15,'sine',0.1),100)}
+  const s=SOUNDS;
+  if(type==='dist')playSound(s.dist);
+  else if(type==='haz')playSound(s.haz);
+  else if(type==='rem')playSound(s.rem);
+  else if(type==='safe'){playSound(s.safe);setTimeout(()=>playSound(s.safe2),100)}
 }
 function playTurnSound(){
-  if(!sfxOn)return;
-  playTone(440,0.08,'sine',0.1);setTimeout(()=>playTone(554,0.08,'sine',0.1),80);setTimeout(()=>playTone(660,0.12,'sine',0.12),160);
+  const s=SOUNDS;
+  playSound(s.turn);
+  setTimeout(()=>playSound(s.turn2),80);
+  setTimeout(()=>playSound(s.turn3),160);
 }
 function vibrate(ms){
   if(!vibOn)return;
@@ -433,7 +466,7 @@ function showCardMenu(idx){
     document.body.removeChild(d);
   });
   d.querySelector('#cdisc').addEventListener('click',()=>{
-    playTone(300,0.15,'triangle',0.08);
+    playSound(SOUNDS.discard);
     ws.send(JSON.stringify({type:'discard_card',cardIndex:idx}));
     document.body.removeChild(d);
   });
