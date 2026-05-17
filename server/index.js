@@ -135,7 +135,8 @@ function canPlayCard(player, card, room, target) {
     return null;
   }
   if (card.t === 'rem') {
-    const expectedHazard = card.s === 'end_speed' ? 'speed_limit' : card.s === 'go' ? 'stop' : card.s;
+    const remedyToHazard = { repair:'accident', spare_tire:'flat_tire', gasoline:'out_of_gas', end_speed:'speed_limit', go:'stop' };
+    const expectedHazard = remedyToHazard[card.s];
     if (expectedHazard === 'speed_limit') {
       if (!player.speedPile) return 'Pas de limitation active';
     } else {
@@ -145,6 +146,13 @@ function canPlayCard(player, card, room, target) {
   }
   if (card.t === 'safe') {
     if (player.safeties.includes(card.s)) return 'Botte déjà en jeu';
+    const safetyToHazard = { driving_ace:'accident', puncture_proof:'flat_tire', fuel_tank:'out_of_gas' };
+    const h = safetyToHazard[card.s];
+    if (card.s === 'emergency_vehicle') {
+      if (player.speedPile !== 'speed_limit' && player.battlePile !== 'stop') return 'Pas de limitation ou feu rouge à contrer';
+    } else {
+      if (!h || player.battlePile !== h) return 'Pas de panne correspondante pour cette botte';
+    }
     return null;
   }
   return 'Carte invalide';
@@ -186,14 +194,12 @@ function playCardInGame(room, playerId, cardIndex, targetId) {
     room.lastMove = { player: player.name, action: `${cardName(card)}` };
   } else if (card.t === 'safe') {
     player.safeties.push(card.s);
-    if (card.s === 'emergency_vehicle') { player.speedPile = null; if (player.battlePile === 'stop') player.battlePile = null; }
-    else if (hazardMatch(card.s === 'driving_ace' ? 'accident' : card.s === 'puncture_proof' ? 'flat_tire' : 'out_of_gas', card.s)) {
+    if (card.s === 'emergency_vehicle') { player.speedPile = null; if (player.battlePile === 'stop') player.battlePile = null; player.lastAttacked = null; }
+    else {
       const hazardMap = { driving_ace: 'accident', puncture_proof: 'flat_tire', fuel_tank: 'out_of_gas' };
-      if (player.battlePile === hazardMap[card.s]) player.battlePile = null;
+      if (player.battlePile === hazardMap[card.s]) { player.battlePile = null; player.lastAttacked = null; }
     }
     room.lastMove = { player: player.name, action: `joue la botte ${cardName(card)} !` };
-    // Safety gives extra turn - don't advance
-    return { extraTurn: true };
   }
 
   // Check win
@@ -378,12 +384,6 @@ wss.on('connection', (ws) => {
           }
         }
         return;
-      }
-      if (result.extraTurn) {
-        const cur = room.players[room.currentPlayer];
-        // Extra turn: keep turn, auto-draw again
-        if (room.deck.length > 0) cur.hand.push(room.deck.pop());
-        cur.hasDrawn = true;
       }
       for (const p of room.players) {
         if (p.ws && p.ws.readyState === 1) {

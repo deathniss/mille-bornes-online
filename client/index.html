@@ -378,10 +378,16 @@ function canPlayCardCheck(card, player){
     return targets.some(p=>p.isConnected!==false && (card.s==='speed_limit'?!p.speedPile:!p.battlePile) && !((p.safeties||[]).some(s=>hm(card.s,s))));
   }
   if(card.t==='rem'){
-    const h=card.s==='end_speed'?'speed_limit':card.s==='go'?'stop':card.s;
+    const rt={repair:'accident',spare_tire:'flat_tire',gasoline:'out_of_gas',end_speed:'speed_limit',go:'stop'};
+    const h=rt[card.s];
     return h==='speed_limit'?!!player.speedPile:player.battlePile===h;
   }
-  if(card.t==='safe') return !player.safeties.includes(card.s);
+  if(card.t==='safe'){
+    if(player.safeties.includes(card.s))return false;
+    const sh={driving_ace:'accident',puncture_proof:'flat_tire',fuel_tank:'out_of_gas'};
+    if(card.s==='emergency_vehicle')return player.speedPile==='speed_limit'||player.battlePile==='stop';
+    return sh[card.s]&&player.battlePile===sh[card.s];
+  }
   return false;
 }
 
