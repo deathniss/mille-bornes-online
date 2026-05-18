@@ -383,11 +383,12 @@ const game=document.getElementById('game'),results=document.getElementById('resu
 const errEl=document.getElementById('err');
 
 // ===================== SOUND CONFIG =====================
-// Sons pré-générés en WAV pour compatibilité Android/iOS
-// Pas besoin de AudioContext utilisateur — OfflineAudioContext génère sans geste
 let sfxOn=localStorage.getItem('sfx')!=='off',vibOn=localStorage.getItem('vib')!=='off';
 const sndCache = {};
 let sndReady = false;
+let audioCtx=null;
+
+function getCtx(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
 
 function renderWav(cat, cb){
   const sampleRate=22050;
@@ -426,8 +427,25 @@ function preRenderAllSounds(cb){
 
 function playSynthWav(cat){
   if(!sfxOn)return;
-  if(!sndReady||!sndCache[cat])return;
-  try{var a=new Audio(sndCache[cat]);a.volume=0.5;a.play().catch(function(){})}catch(e){}
+  if(sndReady&&sndCache[cat]){
+    try{var a=new Audio(sndCache[cat]);a.volume=0.5;a.play().catch(function(){})}catch(e){}
+    return;
+  }
+  playSynthFallback(cat);
+}
+
+function playSynthFallback(cat){
+  try{
+    var c=getCtx();if(!c)return;
+    var t=c.currentTime;
+    if(cat==='dist'){var d=snd.dist;var o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.setValueAtTime(d.grave,t);o.frequency.exponentialRampToValueAtTime(d.aigu,t+d.dur);g.gain.setValueAtTime(d.vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+d.dur);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d.dur)}
+    else if(cat==='horn'){var h=snd.horn;[h.grave,h.aigu].forEach(function(f,i){var o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(h.vol*0.3,t+i*0.15);g.gain.setValueAtTime(h.vol*0.3,t+i*0.15+h.dur-0.1);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.15+h.dur);o.connect(g);g.connect(c.destination);o.start(t+i*0.15);o.stop(t+i*0.15+h.dur)})}
+    else if(cat==='screech'){var sc=snd.screech;var bufSize=c.sampleRate*sc.dur,buf=c.createBuffer(1,bufSize,c.sampleRate),data=buf.getChannelData(0);for(var i=0;i<bufSize;i++)data[i]=Math.random()*2-1;var src=c.createBufferSource();src.buffer=buf;var bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=sc.freq;bp.Q.value=0.5;var g=c.createGain();g.gain.setValueAtTime(sc.vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+sc.dur);src.connect(bp);bp.connect(g);g.connect(c.destination);src.start(t)}
+    else if(cat==='garage'){var g=snd.garage;var o=c.createOscillator(),ga=c.createGain();o.type='triangle';o.frequency.setValueAtTime(g.grave,t);o.frequency.exponentialRampToValueAtTime(g.aigu,t+g.dur);ga.gain.setValueAtTime(g.vol,t);ga.gain.exponentialRampToValueAtTime(0.001,t+g.dur);o.connect(ga);ga.connect(c.destination);o.start(t);o.stop(t+g.dur)}
+    else if(cat==='victoire'){var v=snd.victoire;[v.grave,v.grave*1.3,v.grave*1.7,v.aigu].forEach(function(f,i){var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(v.vol,t+i*v.dur*1.5);g.gain.setValueAtTime(v.vol,t+i*v.dur*1.5+v.dur);g.gain.exponentialRampToValueAtTime(0.001,t+i*v.dur*1.5+v.dur*1.5);o.connect(g);g.connect(c.destination);o.start(t+i*v.dur*1.5);o.stop(t+i*v.dur*1.5+v.dur*1.5)})}
+    else if(cat==='beep'){var b=snd.beep;[b.grave,b.aigu].forEach(function(f,i){var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(b.vol,t+i*b.dur*1.5);g.gain.exponentialRampToValueAtTime(0.001,t+i*b.dur*1.5+b.dur);o.connect(g);g.connect(c.destination);o.start(t+i*b.dur*1.5);o.stop(t+i*b.dur*1.5+b.dur)})}
+    else if(cat==='discard'){var d=snd.discard;var o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(d.grave,t);o.frequency.exponentialRampToValueAtTime(d.aigu,t+d.dur);g.gain.setValueAtTime(d.vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+d.dur);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d.dur)}
+  }catch(e){}
 }
 
 function defCfg(v){return JSON.parse(localStorage.getItem('sndCfg')||'null')||v}
@@ -482,8 +500,12 @@ function vibrate(ms){
   if(!vibOn)return;
   try{navigator.vibrate(ms)}catch(e){}
 }
-// Pré-générer tous les sons au premier clic/touch
-(function(){var cb=function(){preRenderAllSounds()};['click','touchstart','touchend'].forEach(function(e){document.addEventListener(e,cb,{once:true})})})();
+// Pré-générer les sons WAV immédiatement + fallback Web Audio
+preRenderAllSounds();
+// Fallback : sndReady = true après 3s même si le rendu WAV a échoué
+setTimeout(function(){if(!sndReady)sndReady=true},3000);
+// Initialiser AudioContext au premier clic pour le fallback Web Audio
+['click','touchstart','touchend'].forEach(function(e){document.addEventListener(e,function(){getCtx()},{once:true})});
 
 async function downloadSnd(cat){
   const dur = snd[cat]?.dur || 0.3;
