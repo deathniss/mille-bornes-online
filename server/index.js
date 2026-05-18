@@ -172,11 +172,11 @@ function canPlayCard(player, card, room, target) {
   }
   if (card.t === 'safe') {
     if (player.safeties.includes(card.s)) return 'Botte déjà en jeu';
-    const safetyToHazard = { driving_ace:'accident', puncture_proof:'flat_tire', fuel_tank:'out_of_gas' };
-    const h = safetyToHazard[card.s];
     if (card.s === 'emergency_vehicle') {
-      if (player.speedPile !== 'speed_limit' && player.battlePile !== 'stop') return 'Pas de limitation ou feu rouge à contrer';
+      // Toujours jouable (sert aussi de Feu Vert)
     } else {
+      const safetyToHazard = { driving_ace:'accident', puncture_proof:'flat_tire', fuel_tank:'out_of_gas' };
+      const h = safetyToHazard[card.s];
       if (!h || player.battlePile !== h) return 'Pas de panne correspondante pour cette botte';
     }
     return null;
