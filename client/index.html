@@ -392,7 +392,8 @@ let sndReady = false;
 function renderWav(cat, cb){
   const sampleRate=22050;
   const dur=Math.max(0.05,snd[cat]?.dur||0.2);
-  const ctx=new OfflineAudioContext(1,Math.ceil(sampleRate*dur),sampleRate);
+  const need=cat==='victoire'?5.5*dur:cat==='beep'?2.5*dur:cat==='horn'?0.15+dur:dur;
+  const ctx=new OfflineAudioContext(1,Math.ceil(sampleRate*need),sampleRate);
   const t=0;
   try{
     if(cat==='dist'){const d=snd.dist;engineRevRender(ctx,t,d)}
@@ -486,8 +487,9 @@ function vibrate(ms){
 
 async function downloadSnd(cat){
   const dur = snd[cat]?.dur || 0.3;
+  const need=cat==='victoire'?5.5*dur:cat==='beep'?2.5*dur:cat==='horn'?0.15+dur:dur;
   const sampleRate=44100;
-  const ctx = new OfflineAudioContext(1, Math.ceil(sampleRate*dur), sampleRate);
+  const ctx = new OfflineAudioContext(1, Math.ceil(sampleRate*need), sampleRate);
   const t=0;
   try{
     if(cat==='dist'){const d=snd.dist;engineRevRender(ctx,t,d)}
