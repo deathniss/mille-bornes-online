@@ -2,6 +2,7 @@
   "name": "mille-bornes-online",
   "version": "1.0.0",
   "private": true,
+  "engines": { "node": "18.x" },
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js"

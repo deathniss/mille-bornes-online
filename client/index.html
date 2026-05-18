@@ -690,7 +690,7 @@ function initCardSndList(){
 // ===================== WEBSOCKET =====================
 function wakeServer(cb){
   const isCapacitor = typeof window.Capacitor !== 'undefined';
-  const httpUrl = isCapacitor ? 'https://mille-bornes-online-1.onrender.com' : (location.protocol === 'https:'?'https://':'http://')+(location.host||'localhost:3000');
+  const httpUrl = isCapacitor ? 'https://mille-bornes-online.fly.dev' : (location.protocol === 'https:'?'https://':'http://')+(location.host||'localhost:3000');
   var x=new XMLHttpRequest();x.open('GET',httpUrl,true);x.timeout=15000;
   x.onload=function(){setTimeout(cb,500)};
   x.onerror=function(){setTimeout(cb,1000)};
@@ -702,7 +702,7 @@ function connect(){
   let url = localStorage.getItem('srvUrl');
   if (!url) {
     if (isCapacitor) {
-      url = 'wss://mille-bornes-online-1.onrender.com';
+      url = 'wss://mille-bornes-online.fly.dev';
     } else {
       const isSecure = location.protocol === 'https:' || location.protocol === 'file:';
       const proto = isSecure ? 'wss:' : 'ws:';
